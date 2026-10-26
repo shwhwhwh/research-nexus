@@ -1,0 +1,11 @@
+# Research Nexus Designer
+
+RN owns the graph, versions, connector permissions and execution history. Local Codex / Claude Code compile a selected edge's purpose and its source/target capabilities into a structured integration plan. The initial plugin format is declarative: HTTP JSON read/write, transformations, deduplication, local artifact output and the existing archive operation. Generated plans are validated by RN; model output is never passed to a shell or evaluated as Python/JavaScript.
+
+Lifecycle: draw → describe → generate → fixture test / preview → inspect → enable exact version → run manually or on a bounded schedule. Editing nodes or an edge invalidates previous activation. Failed run metadata can be supplied to an agent to create a new candidate version; the active version is retained until its replacement is enabled. Rollback selects a previously tested version matching the current graph contract. The existing alphaXiv archive remains owned by its original engine and scheduler.
+
+Website nodes open in persistent embedded views. Local app nodes launch a user-selected executable with no shell and no arbitrary arguments. The two existing native integrations retain their embedded windows; generic native embedding is not assumed for every desktop application. Folder nodes and outputs live in workspace-owned directories. API credentials are referenced by environment variable name, resolved only during execution, redacted in logs and never inserted into agent prompts. HTTP destinations must belong to registered source/target node origins; redirects cannot silently expand that set.
+
+Storage: `data/designer/project.json`, immutable graph snapshots, versioned plans and run records under `data/designer/`. Per-edge non-overlapping execution and persisted last-run times prevent duplicate scheduling on restart. Sequential graph execution propagates JSON outputs along selected edges and rejects cycles. Feedback/evolution occurs through explicit new candidate versions rather than unbounded recursive execution.
+
+CLI references: [Codex non-interactive mode](https://learn.chatgpt.com/docs/non-interactive-mode), [Claude Code programmatic mode](https://code.claude.com/docs/en/headless). CLI auth is reused. No API keys are copied into RN.
