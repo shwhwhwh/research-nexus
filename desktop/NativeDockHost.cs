@@ -186,6 +186,7 @@ internal sealed class DockHost : Form {
             }
             if(command=="open") {
                 string tool=ReadText(d,"tool"); if(!programs.ContainsKey(tool))throw new Exception("不支持的本地工具。");
+                RefreshPrograms();
                 if(!File.Exists(programs[tool]))throw new Exception("未找到本地 "+tool+" 应用。");
                 var found=Find(tool);
                 if(found==null) {
@@ -224,11 +225,27 @@ internal sealed class DockHost : Form {
         } catch(Exception e) { Send(writer,new {id=id,error=e.Message}); }
     }
     static bool SameExe(int pid,string exe) { try { return String.Equals(Process.GetProcessById(pid).MainModule.FileName,exe,StringComparison.OrdinalIgnoreCase); } catch { return false; } }
+    void RefreshPrograms() {
+        try {
+            var file=Path.Combine(root,"data","config.json");
+            if(!File.Exists(file))return;
+            var settings=json.DeserializeObject(File.ReadAllText(file,Encoding.UTF8)) as Dictionary<string,object>;
+            foreach(var tool in new [] {"zotero","openresearch"}) {
+                object value;
+                if(settings!=null&&settings.TryGetValue(tool+"_exe",out value)) {
+                    string exe=Convert.ToString(value);
+                    if(Path.IsPathRooted(exe)&&String.Equals(Path.GetExtension(exe),".exe",StringComparison.OrdinalIgnoreCase)&&File.Exists(exe))programs[tool]=exe;
+                }
+            }
+        } catch { }
+    }
     static object RectData(Rectangle r) {return new {x=r.X,y=r.Y,width=r.Width,height=r.Height};}
     ToolWindow Find(string tool) {
+        RefreshPrograms();
         ToolWindow existing;
         if(tools.TryGetValue(tool,out existing)&&Native.IsWindow(existing.Handle)&&Native.Pid(existing.Handle)==existing.Pid)return existing;
-        string exe=tool=="zotero"?programs[tool]:Path.Combine(Path.GetDirectoryName(programs[tool]),"orx.exe");
+        string sibling=Path.Combine(Path.GetDirectoryName(programs[tool]),"orx.exe");
+        string exe=tool=="zotero"||!File.Exists(sibling)?programs[tool]:sibling;
         var matches=new List<IntPtr>();
         Native.EnumWindows((h,p)=> {
             if(!SameExe((int)Native.Pid(h),exe))return true;

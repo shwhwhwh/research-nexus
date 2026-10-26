@@ -1,0 +1,33 @@
+{
+  "format": "research-nexus-system",
+  "schema_version": 1,
+  "id": "literature-workspace",
+  "version": "1.0.0",
+  "min_rn_version": "0.3.0",
+  "name": "Literature Research System",
+  "name_zh": "文献科研系统",
+  "publisher": "Rui Li (@shwhwhwh)",
+  "license": "MIT",
+  "description": "Read alphaXiv bookmarks, deduplicate and archive in Zotero, sync linked PDFs through Google Drive, and continue research in the installed OpenResearch app inside RN.",
+  "description_zh": "读取 alphaXiv 收藏，去重归档到 Zotero，通过 Google Drive 同步链接 PDF，在 RN 内打开本地 OpenResearch 继续研究。",
+  "engine": "builtin-literature-v1",
+  "defaults": {
+    "sync_interval_seconds": 86400,
+    "download_pdf": true,
+    "upload_pdf": false,
+    "pdf_storage": "linked_folder",
+    "zotero_collection": "Research Nexus Inbox",
+    "auto_sync": false
+  },
+  "tools": ["alphaxiv", "zotero", "openresearch", "google-drive-desktop"],
+  "flows": [
+    {"source": "alphaxiv", "target": "research-nexus", "mode": "automatic", "purpose": "Read bookmarked public arXiv papers and deduplicate stable identifiers."},
+    {"source": "research-nexus", "target": "zotero", "mode": "automatic", "purpose": "Archive metadata, source notes, and linked PDF attachments."},
+    {"source": "research-nexus", "target": "google-drive-folder", "mode": "automatic", "purpose": "Save verified PDF files in the user-selected local sync folder."},
+    {"source": "google-drive-folder", "target": "google-drive-cloud", "mode": "external-client", "purpose": "Google Drive for desktop synchronizes files using the user's own login."},
+    {"source": "zotero", "target": "openresearch", "mode": "manual", "purpose": "Open both installed tools inside RN; choose a paper and provide its link or file to a research conversation."}
+  ],
+  "setup": ["service-api-keys", "zotero-user-id", "installed-app-paths", "drive-desktop-login-and-folder", "zotero-desktop-sync", "openresearch-agent-login"],
+  "contains_credentials": false,
+  "contains_user_data": false
+}

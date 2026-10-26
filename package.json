@@ -1,21 +1,32 @@
 {
   "name": "research-nexus",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
-  "description": "A local visual designer and controller for your DIY research system",
+  "description": "A local research workspace with installable System Templates",
   "author": "Rui Li (@shwhwhwh)",
   "license": "MIT",
-  "repository": { "type": "git", "url": "https://github.com/shwhwhwh/research-nexus.git" },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/shwhwhwh/research-nexus.git"
+  },
   "homepage": "https://github.com/shwhwhwh/research-nexus",
-  "bugs": { "url": "https://github.com/shwhwhwh/research-nexus/issues" },
-  "engines": { "node": ">=22.12.0" },
+  "bugs": {
+    "url": "https://github.com/shwhwhwh/research-nexus/issues"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "main": "desktop/main.cjs",
   "scripts": {
     "start": "electron .",
     "test": "node scripts/test.cjs",
-    "check": "node --check desktop/main.cjs && node --check desktop/tool-views.cjs && node --check desktop/reading-position.cjs && node --check desktop/native-apps.cjs && node --check desktop/openresearch.cjs && node --check desktop/preload.cjs && node --check web/appearance.js && node --check web/designer.js && node --check web/app.js",
+    "check": "node --check desktop/main.cjs && node --check desktop/tool-views.cjs && node --check desktop/reading-position.cjs && node --check desktop/native-apps.cjs && node --check desktop/openresearch.cjs && node --check desktop/preload.cjs && node --check web/appearance.js && node --check web/designer.js && node --check web/app.js && node --check web/systems.js && node --check scripts/record-system-demo.cjs",
     "test:alpha": "electron desktop/verify-alpha-switch.cjs",
-    "test:designer": "electron desktop/verify-designer.cjs"
+    "test:designer": "electron desktop/verify-designer.cjs",
+    "test:systems": "electron scripts/record-system-demo.cjs --test-only",
+    "demo": "electron scripts/record-system-demo.cjs"
   },
-  "devDependencies": { "electron": "45.0.0" }
+  "devDependencies": {
+    "electron": "45.0.0"
+  }
 }

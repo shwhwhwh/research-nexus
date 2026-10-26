@@ -19,4 +19,4 @@ jobs:
       - run: npm run check
       - run: npm test
       - run: powershell -NoProfile -ExecutionPolicy Bypass -File desktop/build-native-host.ps1
-      - run: npm run test:designer
+      - run: npm run test:systems

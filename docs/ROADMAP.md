@@ -1,19 +1,16 @@
 # Roadmap / 路线图
 
-Research Nexus aims to let researchers build and share their own DIY research systems while remaining the top-level controller and designer.
+## Available now / 当前发布
 
-## Available in this preview / 当前预览版
+- System Template 01: alphaXiv bookmarks → RN deduplication → Zotero metadata / linked PDF archive.
+- PDF files in a user-selected Google Drive desktop folder; sync handled by that client.
+- Installed Zotero and OpenResearch windows inside the RN workspace; user-directed research handoff.
+- Download/import of the reviewed credential-free template, setup checklist, daily scheduling, themes, and tray support.
 
-Visual graph, custom website / app / folder nodes, versioned declarative plans from local agents, fixture previews, explicit activation, scheduled connections, acyclic graph execution, literature deduplication / archiving, persistent web views, themes, and experimental Windows native embedding.
+## Unfinished / 未完成
 
-## Planned, not yet implemented / 后续方向，尚未实现
+**DIY visual data-flow building, agent-generated connectors, and autonomous evolution are under development, not released features.** Their old experimental execution endpoints and scheduler are disabled.
 
-- Portable graph import/export with credential placeholders and privacy validation.
-- A documented connector SDK and reusable community templates.
-- Blank workspaces and optional built-in integrations; improved first-run onboarding.
-- Broader CLI discovery and connector capability checks.
-- Better multi-input routing, observability, and recovery.
-- Signed installation packages, upgrades, localization, and platform evaluation.
-- Measured feedback-driven improvements with review, provenance, and rollback.
+Later work includes more reviewed templates, portable connector contracts, blank/custom systems, richer permissions, reviewed version upgrades, signed installers, and localization. Automatic Zotero-to-OpenResearch handoff remains planned.
 
-优先让用户方便地安装、添加自己的工具、分享不含密钥的数据流模板，再逐步完善连接器生态与可审查的自动改进。路线图是方向，不代表当前版本已具备以上能力。
+当前先发布可复用、可配置的第一套科研系统。DIY 画线、Agent 自动接线与系统自动演化暂未完成；后续再逐步开放，避免把实验原型描述为现成功能。

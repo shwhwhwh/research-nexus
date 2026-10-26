@@ -12,14 +12,16 @@ from urllib.parse import parse_qs, urlparse
 from .domain import BridgeError
 from .engine import Engine
 from .designer import Designer
+from .systems import Systems
 
 
-def serve(root: Path, port=0):
-    engine = Engine(root)
+def serve(root: Path, port=0, *, engine_factory=Engine):
+    engine = engine_factory(root)
     designer = Designer(root, engine)
+    systems = Systems(root, engine)
     csrf = secrets.token_urlsafe(32)
     class Handler(BaseHTTPRequestHandler):
-        server_version = "ResearchNexus/0.2"
+        server_version = "ResearchNexus/0.3"
 
         def log_message(self, *args):
             pass
@@ -55,6 +57,10 @@ def serve(root: Path, port=0):
                     return self.send(200, status)
                 if path == "/api/designer":
                     return self.send(200, designer.public())
+                if path == "/api/systems":
+                    return self.send(200, systems.public())
+                if path == "/api/systems/template":
+                    return self.send(200, systems.manifest, Content_Disposition='attachment; filename="literature-workspace.rn-system.json"')
                 if path == "/api/local-library":
                     return self.send(200, engine.local_library(parse_qs(parsed.query).get("q", [""])[0]))
                 if path == "/api/openresearch":
@@ -71,7 +77,7 @@ def serve(root: Path, port=0):
                     return self.send(200, file.read_bytes(), "application/pdf")
                 if path == "/icon.png":
                     return self.send(200, (root / "web" / "icon.png").read_bytes(), "image/png")
-                files = {"/": "index.html", "/app.js": "app.js", "/appearance.js": "appearance.js", "/style.css": "style.css", "/icon.svg": "icon.svg", "/designer.js": "designer.js", "/designer.css": "designer.css"}
+                files = {"/": "index.html", "/app.js": "app.js", "/appearance.js": "appearance.js", "/style.css": "style.css", "/icon.svg": "icon.svg", "/designer.js": "designer.js", "/designer.css": "designer.css", "/systems.js": "systems.js", "/systems.css": "systems.css"}
                 if path in files:
                     file = root / "web" / files[path]
                     content = file.read_text(encoding="utf-8")
@@ -98,8 +104,16 @@ def serve(root: Path, port=0):
                     return self.send(400, {"error": "Invalid body"})
                 payload = json.loads(self.rfile.read(size) or b"{}")
                 path = urlparse(self.path).path
+                if path == "/api/systems/install":
+                    return self.send(200, systems.install(payload.get("manifest")))
+                if path == "/api/systems/configure":
+                    return self.send(200, systems.configure(payload))
+                if path == "/api/systems/enable":
+                    return self.send(200, systems.enable())
                 if path.startswith("/api/designer/"):
                     action = path.rsplit("/", 1)[-1]
+                    if action not in ("disable", "cancel"):
+                        return self.send(409, {"error": "DIY 数据流搭建尚未完成；请使用 System Template。"})
                     if action == "save":
                         return self.send(200, designer.save_graph(payload))
                     if action == "build":
@@ -147,10 +161,8 @@ def serve(root: Path, port=0):
     engine.config._atomic(root / "data" / "runtime.json", ConfigInfo)
     print(json.dumps({"ready": True, "url": url}), flush=True)
     threading.Thread(target=engine.scheduler, daemon=True).start()
-    def designer_scheduler():
-        while not designer.stop_event.wait(5):
-            designer.tick()
-    threading.Thread(target=designer_scheduler, daemon=True).start()
+    # DIY scheduling remains unpublished; the reviewed archive engine schedules
+    # the installed system. Legacy plans remain available for migration only.
     try:
         server.serve_forever(poll_interval=0.3)
     finally:

@@ -30,7 +30,7 @@ function toast(message,error=false) {
 async function refresh() {
   if(fetching)return;
   fetching=true;
-  try { state=await api('/api/status'); updateChrome(); if(!tool && page!=='designer' && !(page==='settings' && settingsDirty)) render(); }
+  try { state=await api('/api/status'); updateChrome(); if(!tool && !['designer','systems'].includes(page) && !(page==='settings' && settingsDirty)) render(); }
   catch(error){if(!state)$('#main').innerHTML=`<div class="error-banner">${esc(error.message)}</div>`;}
   finally{fetching=false;}
 }
@@ -43,13 +43,14 @@ function updateChrome() {
   $('#sync-indicator').classList.toggle('connected',state.auto_sync_running);
 }
 function navigate(name) {
+  if(page==='systems'&&name!=='systems')window.NexusSystems?.unmount();
   if(page==='designer'&&name!=='designer')window.NexusDesigner?.unmount();
   page=name;tool=null;settingsDirty=false;
-  document.body.classList.toggle('designer-open',name==='designer');
+  document.body.classList.remove('designer-open');
   document.body.classList.remove('tool-open');$('#tool-controls').classList.add('hidden');
   window.workspace?.hideTool();
   $('.nav.active')?.classList.remove('active');$(`.nav[data-page="${name}"]`)?.classList.add('active');
-  $('#page-title').textContent={home:'工作台',designer:'系统设计器',archive:'归档记录',library:'本地文献',settings:'连接与设置'}[name];
+  $('#page-title').textContent={home:'工作台',systems:'系统模板',designer:'DIY 搭建 · 未完成',archive:'归档记录',library:'本地文献',settings:'连接与设置'}[name];
   render();if(name==='library')loadLibrary();
 }
 function hero(title,description,badge='YOUR RESEARCH SPACE') {
@@ -68,7 +69,7 @@ function home() {
     ['开启自动归档','去重后保存文献与 PDF；可查看每条处理结果。',state.auto_sync_running,'settings','设置归档']
   ];
   const cadence=state.config.sync_interval_seconds===86400?'每天':state.config.sync_interval_seconds%3600===0?'每 '+state.config.sync_interval_seconds/3600+' 小时':'每 '+Math.round(state.config.sync_interval_seconds/60)+' 分钟';
-  return hero('研究，从这里继续。','发现值得读的论文，连接已有知识，推进下一个研究问题。')+
+  return hero('研究，从这里继续。','使用第一个 System Template，把收藏、文献与研究工具连起来。')+`<section class="panel"><div class="panel-body"><b>System Template 01 · 文献科研系统</b><p class="subtle">alphaXiv → RN 去重归档 → Zotero + Google Drive · 在 RN 内打开 OpenResearch 继续研究。</p><button class="button primary" data-go="systems">安装 / 使用系统模板 →</button></div></section>`+
     `<div class="section-label">你的研究工具</div><div class="launch-grid">${[['alpha','α','alpha','alphaXiv','发现论文 · 收藏与阅读'],['zotero','Z','zotero','Zotero','文献归档 · 批注与引用'],['openresearch','◩','orx','OpenResearch','研究对话 · 实验与探索']].map(([name,letter,kind,title,description])=>`<button class="launch-card" data-tool="${name}"><span class="service-letter ${kind}-letter">${letter}</span><span><b>${title}</b><small>${description}</small></span><span class="launch-arrow">↗</span></button>`).join('')}</div>`+
     `<div class="metrics">${[['收藏候选',state.jobs.length,'已进入归档队列'],['完成归档',completed,'文献与 PDF 已关联'],['待处理',pending,'需要留意的归档任务'],['自动检查',state.auto_sync_running?cadence:'未开启','最近：'+fmtTime(state.last_sync?.time)]].map(([l,v,s])=>`<div class="metric"><div class="metric-label">${l}</div><div class="metric-value">${v}</div><small>${s}</small></div>`).join('')}</div>`+
     (state.last_error?.message?`<div class="error-banner">${esc(state.last_error.message)}</div>`:'')+
@@ -107,7 +108,8 @@ function library() {
     `<section class="panel">${localItems.length?`<table class="table"><thead><tr><th>论文</th><th>作者</th><th>日期</th><th>查看</th></tr></thead><tbody>${localItems.map(i=>`<tr><td><div class="paper-title">${esc(i.title)}</div><span class="paper-meta">${esc(i.key)}</span></td><td>${esc(i.authors)}</td><td>${esc(i.date)}</td><td><button class="button small" data-zotero-key="${esc(i.key)}">桌面条目</button></td></tr>`).join('')}</tbody></table>`:empty('本地文献列表','启动 Zotero 并允许本地通信后，点击刷新。')}</section><p class="subtle">每次最多显示 100 条；可通过搜索缩小范围。</p>`;
 }
 function render() {
-  if(page==='designer'){window.NexusDesigner?.mount($('#main'),{api,toast,openBuiltin:openTool});return;}
+  if(page==='systems'){window.NexusSystems?.mount($('#main'),{api,toast,openBuiltin:openTool});return;}
+  if(page==='designer'){$('#main').innerHTML=hero('DIY 数据流搭建 · 未完成','自定义数据流与 Agent 自动演化仍在开发中。当前请使用已搭建好的系统模板。','UNDER DEVELOPMENT')+`<section class="panel"><div class="panel-body"><p>第一个可用系统：alphaXiv / Zotero / OpenResearch + Google Drive。</p><button class="button primary" data-go="systems">打开 System Templates →</button></div></section>`;return;}
   if(!state)return;
   $('#main').innerHTML=({home,archive,settings,library}[page]||home)();
 }
@@ -118,6 +120,7 @@ async function loadLibrary() {
 async function openTool(name,url) {
   if(!window.workspace) {toast('请通过 Research Nexus 桌面启动器打开，才能在同一窗口使用工具。',true);return;}
   window.NexusDesigner?.unmount();document.body.classList.remove('designer-open');
+  window.NexusSystems?.unmount();
   const native=['zotero','openresearch'].includes(name);
   tool=name;document.body.classList.add('tool-open');$('#tool-controls').classList.remove('hidden');
   $('#tool-window').classList.toggle('hidden',!native);
@@ -180,6 +183,7 @@ document.addEventListener('submit',async event=>{
 });
 window.workspace?.onToolState(data=>{if(tool===data.tool){$('#tool-address').textContent=(data.loading?'正在加载 · ':'')+(data.url||'');if(data.error)toast(data.error,true);}});
 window.workspace?.onOpenDesigner?.(()=>navigate('designer'));
+window.workspace?.onOpenSystems?.(()=>navigate('systems'));
 window.addEventListener('nexus-custom-tool',event=>{
   const data=event.detail;window.NexusDesigner?.unmount();document.body.classList.remove('designer-open');
   tool=data.tool;document.body.classList.add('tool-open');$('#tool-controls').classList.remove('hidden');

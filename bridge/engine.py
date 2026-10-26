@@ -54,7 +54,7 @@ class Engine:
     def status(self):
         jobs = self.store.jobs(self.scope())
         counts = Counter(j["status"] for j in jobs)
-        return {"name": "Research Nexus", "version": "0.2.0", "busy": self.busy,
+        return {"name": "Research Nexus", "version": "0.3.0", "busy": self.busy,
                 "operation": self.operation, "config": self.config.public(), "missing": self.missing(),
                 "counts": dict(counts), "jobs": jobs, "folders": self.store.meta("folders") or [],
                 "warnings": self.store.meta("warnings") or [], "last_sync": self.store.meta("last_sync"),
@@ -91,7 +91,11 @@ class Engine:
         if not self.lock.acquire(blocking=False):
             raise BridgeError("同步或连接检查中，请完成后再修改配置。")
         try:
+            before = self.config.snapshot()
+            changed_account = ("zotero_user_id" in payload and str(payload["zotero_user_id"]) != before["zotero_user_id"]) or any(payload.get(k) and payload[k] != self.config.secret(k) for k in ("alphaxiv_key", "zotero_key"))
             self.config.save(payload)
+            if changed_account:
+                self.store.meta("checks", {})
             self.event("info", "连接和归档设置已保存，密钥不会出现在界面读回数据中。")
             self.next_auto = time.monotonic() + 5
         finally:

@@ -18,7 +18,11 @@ contextBridge.exposeInMainWorld('workspace', {
   onNativeToolState: (callback) => ipcRenderer.on('native-tool-state', (_event,data) => callback(data)),
   choosePdfFolder: () => ipcRenderer.invoke('choose-pdf-folder'),
   chooseToolExecutable: () => ipcRenderer.invoke('choose-tool-executable'),
+  chooseSystemTemplate: () => ipcRenderer.invoke('choose-system-template'),
+  saveSystemTemplate: manifest => ipcRenderer.invoke('save-system-template',manifest),
+  openSetupLink: key => ipcRenderer.invoke('open-setup-link',key),
   openDesignerNode: id => ipcRenderer.invoke('open-designer-node',id),
   onOpenDesigner: callback => ipcRenderer.on('open-designer',()=>callback()),
+  onOpenSystems: callback => ipcRenderer.on('open-systems',()=>callback()),
   onToolState: (callback) => ipcRenderer.on('tool-state', (_event, data) => callback(data)),
 });

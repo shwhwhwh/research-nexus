@@ -1,40 +1,45 @@
-<p align="center"><img src="desktop/nexus-aurora-soft-rainbow.png" width="112" alt="Research Nexus 莫比乌斯环图标"></p>
+<p align="center"><img src="desktop/nexus-aurora-soft-rainbow.png" width="112" alt="Research Nexus"></p>
 
 # Research Nexus
 
-**画出你的科研流程，连接你的工具，搭建属于自己的科研系统。**
+**一个工作空间，运行一套已经搭建好的科研系统。**
 
-[English](README.md) · [架构说明](docs/architecture.md) · [路线图](docs/ROADMAP.md) · [项目归属](OWNERSHIP.md)
+[English](README.md) · [下载 v0.3.0](https://github.com/shwhwhwh/research-nexus/releases/tag/v0.3.0) · [模板使用指南](docs/SYSTEM_TEMPLATE.zh-CN.md) · [项目归属](OWNERSHIP.md)
 
-Research Nexus（RN）是运行在本地的科研工作台、可视化设计工具和顶层控制器。你可以添加科研网页、API、本地应用和输出目录，画出工具之间的数据流向并说明用途，再调用自己电脑上的 Codex 或 Claude Code，把一条连线生成可以检查、测试和运行的集成方案。
+Research Nexus（RN）是本地科研工作台与顶层控制器。第一个 **System Template（系统模板）** 已经连接 alphaXiv、Zotero、OpenResearch 及 Google Drive 同步目录。用户安装模板后，只需配置自己的账号授权、本地软件与同步文件夹，即可在 RN 中使用这套系统。
 
-**项目由 [Rui Li（@shwhwhwh）](https://github.com/shwhwhwh) 创建和维护，版权所有 © 2026 Rui Li。** 原创代码、文档及项目图标采用 [MIT 许可证](LICENSE)，允许他人使用和修改，并要求保留版权与许可声明。第三方工具及商标归各自权利人所有。
+**DIY 数据流搭建与 Agent 自动演化暂未完成。** 软件入口和文档均标为“开发中”，当前版本不开放使用。早期实验代码保留用于后续开发，对应执行接口和调度已停用。
 
-## 简短演示
+**由 [Rui Li（@shwhwhwh）](https://github.com/shwhwhwh) 创建和维护，版权所有 © 2026 Rui Li。** 原创代码、文档和项目图标采用 [MIT 许可证](LICENSE)，复制与分发时须保留版权及许可声明。第三方工具归各自权利人所有。
 
-[![Research Nexus 独立样例工作空间](docs/assets/demo-poster.png)](https://github.com/shwhwhwh/research-nexus/releases/tag/v0.2.0)
+## System Template 01：文献科研系统
 
-[观看 / 下载演示视频](https://github.com/shwhwhwh/research-nexus/releases/download/v0.2.0/research-nexus-demo.mp4) · [录制方式与中英文字幕稿](docs/DEMO.md)
+[下载模板文件](https://github.com/shwhwhwh/research-nexus/releases/download/v0.3.0/literature-workspace.rn-system.json) · [查看模板内容](system-templates/literature-workspace.rn-system.json)
 
-演示在独立 RN 窗口中录制，全部采用虚构样例，不打开个人账号，不展示真实文献库、研究对话或第三方应用窗口。
+```mermaid
+flowchart LR
+    A[alphaXiv 收藏] -->|自动读取| R[RN 检查与去重]
+    R -->|文献、来源笔记与 PDF 链接| Z[Zotero 桌面版]
+    R -->|保存 PDF| D[Google Drive 本地目录]
+    D -.->|Drive 桌面端同步| C[Drive 云端]
+    Z -.->|用户选择链接或 PDF| O[RN 内的 OpenResearch]
+```
 
-## 当前可以实现什么
+RN 负责收藏读取、去重和归档；Zotero 自己同步文献元数据，Google Drive 桌面端同步 PDF 文件。OpenResearch 使用 RN 中的本地应用窗口，用户把选中的论文链接或 PDF 提供给研究对话。当前尚未实现 Zotero 到 OpenResearch 的自动数据传递。
 
-- **可视化搭建：**添加工具、拖动排列、画连接线，填写数据用途及样例 JSON。
-- **本地 Agent 协作：**复用你安装并登录的 Codex / Claude Code，生成版本化的数据流方案，会消耗对应服务的额度。
-- **先测试再启用：**查看步骤和样例预览，手动启用指定版本；修改接口、用途等集成约定后，需要重新生成和验证。
-- **数据处理与输出：**HTTP JSON 读写、字段选择与映射、筛选、去重、保存 JSON / Markdown。已成功的 POST 通过持久化记录减少重复写入；结果不确定时需要人工核对。
-- **持续改进：**把失败记录和改进要求交给 Agent 生成新候选；可切回与当前连线兼容的已测试版本。
-- **文献归档：**内置 alphaXiv 收藏 → 去重 → Zotero，支持元数据、PDF 及用户指定的同步目录链接文件。
-- **统一工作空间：**网页保留会话和阅读位置；Windows 实验性嵌入已安装的 Zotero / OpenResearch；支持 F11、深浅色与跟随系统、托盘后台运行。
+使用这个模板不需要画数据流、不需要生成连接器，也不需要 RN 调用 Codex / Claude Code。需要 OpenResearch 的研究功能时，在 OpenResearch 内完成自己的 Agent / 模型授权。
 
-当前方案采用受约束的声明式操作。没有可用 API 的网页仍需开发连接器；画线本身不代表任意服务都已接通。
+## 使用演示
 
-## Windows 安装
+[![Research Nexus 第一个系统模板](docs/assets/demo-poster.png)](https://github.com/shwhwhwh/research-nexus/releases/tag/v0.3.0)
 
-当前为 **Windows x64 早期源码预览版**，尚无签名安装包，不附带第三方科研工具。界面目前为简体中文，仓库提供中英文使用说明。
+[观看 / 下载系统演示视频](https://github.com/shwhwhwh/research-nexus/releases/download/v0.3.0/research-nexus-system-demo.mp4) · [演示说明](docs/DEMO.md)
 
-准备 Windows 10/11 x64、Node.js 22.12+（含 npm）、Python 3.10+（含 pip）及 Git。Python 应可通过 `python` 启动，也可以手动指定路径。需要使用 Agent 时，另外安装并登录本地 CLI；内置适配器目前支持 Windows 的 npm Codex / Claude Code 安装方式。
+视频只演示这个系统模板：独立 RN、虚构论文和模拟外部服务。实际运行 RN 的归档引擎，写入两个本地 PDF，并验证重复运行没有重复导入。第三方工具页面明确标为示意界面，不出现个人账号、真实文献库或研究对话。
+
+## 安装 RN（Windows 源码预览版）
+
+当前为 **Windows x64 源码预览版**，尚无签名安装包。安装 RN 需要 Windows 10/11、Node.js 22.12+（含 npm）、Python 3.10+（含 pip）及 Git。完成 RN 的一次安装后，再导入系统模板。
 
 ```powershell
 git clone https://github.com/shwhwhwh/research-nexus.git
@@ -43,49 +48,40 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup.ps1
 npm start
 ```
 
-指定 Python 位置：
+若 Python 不在默认位置，在安装命令后添加 `-Python "C:\path\to\python.exe"`。脚本安装依赖并编译窗口组件。请选择可写目录。安装后双击 **Start Research Nexus.vbs** 或 **Start System Templates.vbs**；也可运行 `desktop/install-nexus-shortcuts.ps1` 创建快捷方式。
 
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup.ps1 -Python "C:\path\to\python.exe"
-```
+## 下载模板后如何运行
 
-安装脚本会安装 Python 依赖和 Electron，生成不进入版本库的 `runtime.local.json`，并使用 Windows .NET Framework 编译本地窗口组件。请选择可写目录。完成后可运行 `desktop/install-nexus-shortcuts.ps1` 创建桌面和开始菜单快捷方式；也可双击 **Start Research Nexus.vbs** 或 **Start System Designer.vbs**。
+1. 下载 `literature-workspace.rn-system.json`，在 RN 左侧打开 **系统模板 → 导入下载的模板**。也可直接安装 RN 内置的同一份模板。
+2. 在 **首次配置** 中填写自己的 alphaXiv API Key、Zotero API Key 和 Zotero 数字 User ID。Zotero Key 需要个人库读写及笔记访问权限。密钥只保存到本机。
+3. 安装 [Zotero](https://www.zotero.org/download/) 和 [OpenResearch](https://github.com/alphaXiv/OpenResearch#readme)，选择其 `.exe` 路径；在 Zotero 登录与 Key 对应的账号并开启自动同步。OpenResearch Windows 版需要 [Git for Windows](https://git-scm.com/downloads/win)，其 Agent 登录在软件内完成。
+4. 安装并登录 [Google Drive 桌面端](https://support.google.com/drive/answer/10838124)，在其同步空间中创建 PDF 文件夹，在 RN 中选择该文件夹并确认已登录。Google 登录由 Drive 客户端负责。
+5. 点击 **保存配置 → 检查 API 连接 → 启用系统 · 每天检查**。首次可点击 **立即归档** 手动测试。
+6. 在 RN 侧边栏使用 alphaXiv 收藏和阅读，在本机 Zotero 窗口整理与引用，在本机 OpenResearch 窗口继续研究。
 
-## 从第一条 DIY 数据流开始
+重复导入同一个模板会保留现有账号、文献和归档频率。保存首次配置会暂停自动归档，检查连接后重新启用。导入模板本身不会写入文献或自动开启定时任务。
 
-1. 打开 **系统设计器**，点击 **示例流程**，加入虚构论文与阅读清单节点。
-2. 选择连线，写清用途、数据类型和手动 / 每小时 / 每天运行方式，然后保存画布。
-3. 选择已安装的本地 Agent，点击 **生成集成方案**。
-4. 阅读生成步骤，再点 **测试与预览**。样例测试模拟网络数据，不请求真实 API，不写入外部工具，也不能证明真实接口已经可用。
-5. 检查预览，点击 **启用此版本**，再点 **运行连线**。本地输出位于 `data/designer/outputs/<目标节点编号>/`。
-6. 用 **添加工具** 接入自己的网页、API 或应用。为节点登记接口基础地址和授权环境变量名，在启动 RN 前设置实际环境变量；不要把密钥写进网址、用途、描述或样例。
+## 当前边界
 
-自定义网页在 RN 内打开；自定义桌面程序以自身窗口启动，目前未实现对任意应用的通用嵌入。整图执行支持无环、单路输入的数据流。当前“自进化”是经过检查的新候选方案与版本迭代，尚不包含自动修改或部署 RN 自身代码。
+- 自动归档当前支持 alphaXiv 返回的公开 arXiv 论文，使用稳定论文编号去重，疑似重复需要人工核对。
+- Drive 同步的 PDF 为 Zotero 链接文件，主要在桌面使用，不会因此成为 Zotero 网页或手机端附件。参见 [Zotero 官方说明](https://www.zotero.org/support/attaching_files#linked_files)。
+- Zotero 元数据同步与 Drive 文件同步分别由相应客户端完成；同步目录只放 PDF，Zotero 数据库保留在其本地目录。
+- API 连接检查验证读取权限；首次归档验证写入权限。Drive、Zotero 同步及 Agent 登录状态由用户确认。
+- 关闭 RN 窗口会隐藏至托盘，在托盘中选择退出才结束；定时任务需要 RN 运行且电脑唤醒。其他软件的后台行为取决于各自配置。
+- 账号、浏览器登录状态、文献及运行数据位于被忽略的 `data/`，密钥由 Windows DPAPI 保护，请勿上传此目录。
+- 模板是配置描述，不执行下载来的代码；当前只接收内置、已核对的模板版本，修改或未知模板会被拒绝。
 
-## 配置文献归档
-
-在 **连接与设置** 中填写你自己的 alphaXiv Key、Zotero User ID 和允许访问目标库的 Zotero Key，配置已安装应用的程序路径。先检查连接、预览归档内容、手动测试一篇论文，再开启自动归档。
-
-PDF 可使用 Zotero 存储，也可选择已有同步文件夹并在 Zotero 中使用链接文件。Google Drive / OneDrive 同步目录需要相应桌面客户端及登录；RN 本身不提供 Drive OAuth 接口。链接 PDF 主要在桌面使用，不会因此自动进入 Zotero 网页阅读器。Zotero 桌面的元数据同步由 Zotero 自身管理。
-
-归档引擎会根据稳定论文编号及已有条目去重；标题疑似重复会进入人工核对。成功归档后重复运行通常会复用原条目，PDF 失败和远端写入结果不确定等情况需要单独重试或核对。
-
-## 数据、隐私与后台运行
-
-个人配置、文献、浏览器登录状态和生成结果保存在被忽略的 `data/`，**不要提交或分享此目录**。已保存服务密钥由当前 Windows 用户的 DPAPI 保护。Agent 授权继续由本地 CLI 管理；生成集成时，所选连线的描述和样例数据会发送到该 Agent 的模型服务。本地运行不等于完全离线，接口与模型调用仍需联网。
-
-关闭 RN 窗口会隐藏到托盘，在托盘菜单选择 **退出 Research Nexus** 才会结束。定时任务需要 RN 运行且电脑处于唤醒状态；当前没有 Windows 服务或云端调度。其他软件的后台行为取决于各自设置。
-
-## 开发和参与
+## 开发和后续方向
 
 ```powershell
 npm run check
 npm test
-npm run test:designer
+npm run test:systems
+npm run test:alpha
 ```
 
-单元测试使用临时数据；设计器测试使用独立服务与浏览器目录，不打开真实科研工具。`test:alpha` 使用隔离的本地样例检查内嵌阅读位置恢复。参见 [贡献指南](CONTRIBUTING.md)、[安全说明](SECURITY.md) 和 [演示复现](docs/DEMO.md)。
+模板界面测试使用独立数据，验证导出导入、首次配置、真实归档引擎、重复运行及 DIY 未开放状态，不访问真实账号。仓库保留可选 [CI 模板](docs/ci/check.yml)，启用需要 GitHub 工作流权限。
 
-仓库提供可选的 [GitHub Actions 检查模板](docs/ci/check.yml)。启用时，使用具有工作流管理权限的账号或令牌，将其复制到 `.github/workflows/check.yml`。
+[路线图](docs/ROADMAP.md) · [架构](docs/architecture.md) · [贡献指南](CONTRIBUTING.md) · [安全说明](SECURITY.md) · [第三方组件](THIRD_PARTY_NOTICES.md)
 
-字体与排版参考 Codex 桌面端；原创柔和渐变扭转环图标的配色方向参考 Antigravity。未包含其应用代码、字体文件、标识或用户提供的参考素材。第三方组件见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
+字体与排版风格参考 Codex 桌面端；原创柔和渐变环图标的配色方向参考 Antigravity。未包含第三方应用代码、字体、标识或个人参考素材。

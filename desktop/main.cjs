@@ -18,6 +18,7 @@ let shuttingDown = false, serverCSRF = '';
 let nativeApps, webTools;
 let workspaceReady=false, openResearchRequested=process.argv.includes('--open-openresearch');
 let designerRequested=process.argv.includes('--open-designer');
+let systemsRequested=process.argv.includes('--open-systems');
 const isNativeTool = tool => ['zotero','openresearch'].includes(tool);
 const views = new Map();
 const customTools = new Map();
@@ -31,6 +32,10 @@ if (!single) app.quit();
 else {
   app.on('second-instance', (_event,args)=>{
     showWorkspace();
+    if(args.includes('--open-systems')) {
+      if(!workspaceReady)systemsRequested=true;
+      else win.webContents.send('open-systems');
+    }
     if(args.includes('--open-designer')) {
       if(!workspaceReady)designerRequested=true;
       else win.webContents.send('open-designer');
@@ -244,6 +249,26 @@ async function start() {
     const result=await dialog.showOpenDialog(win,{title:'选择本地科研应用',properties:['openFile'],filters:[{name:'Windows 应用',extensions:['exe']}]});
     return result.canceled?null:result.filePaths[0];
   });
+  ipcMain.handle('choose-system-template',async event=>{
+    ownSender(event);
+    const result=await dialog.showOpenDialog(win,{title:'导入 Research Nexus System Template',properties:['openFile'],filters:[{name:'Research Nexus System Template',extensions:['json']}]});
+    if(result.canceled)return null;
+    const file=result.filePaths[0];if(fs.statSync(file).size>65536)throw Error('模板文件过大。');
+    return JSON.parse(fs.readFileSync(file,'utf8').replace(/^\uFEFF/,''));
+  });
+  ipcMain.handle('save-system-template',async(event,_manifest)=>{
+    ownSender(event);
+    // Only save the reviewed bundled template, never caller-provided content.
+    const result=await dialog.showSaveDialog(win,{title:'保存 System Template',defaultPath:'literature-workspace.rn-system.json',filters:[{name:'Research Nexus System Template',extensions:['json']}]});
+    if(result.canceled)return false;
+    fs.copyFileSync(path.join(root,'system-templates','literature-workspace.rn-system.json'),result.filePath);return true;
+  });
+  ipcMain.handle('open-setup-link',(event,key)=>{
+    ownSender(event);
+    const links={'zotero-download':'https://www.zotero.org/download/', 'orx-download':'https://github.com/alphaXiv/OpenResearch#readme','drive-download':'https://support.google.com/drive/answer/10838124','git-download':'https://git-scm.com/downloads/win'};
+    if(!Object.hasOwn(links,key))throw Error('不支持的安装入口。');
+    return shell.openExternal(links[key]);
+  });
   ipcMain.handle('open-designer-node',async(event,id)=>{
     ownSender(event);if(typeof id!=='string'||!/^[-a-zA-Z0-9_]{1,64}$/.test(id))throw new Error('工具编号无效。');
     const data=await fetch(origin+'/api/designer').then(r=>r.json());
@@ -265,6 +290,7 @@ async function start() {
   });
   await win.loadURL(address);
   workspaceReady=true;
+  if(systemsRequested){systemsRequested=false;win.webContents.send('open-systems');}
   if(designerRequested){designerRequested=false;openResearchRequested=false;win.webContents.send('open-designer');}
   // Warm the last alphaXiv page without delaying the dashboard or selecting it.
   if(!smoke) {webTools.prewarmAlpha();layout();}
