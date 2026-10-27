@@ -11,6 +11,8 @@ from pathlib import Path
 import secrets
 import sqlite3
 import threading
+import tempfile
+import time
 from datetime import datetime, timezone
 
 from .domain import BridgeError
@@ -146,9 +148,30 @@ class Config:
 
     @staticmethod
     def _atomic(path, obj):
-        tmp = path.with_suffix(".tmp")
-        tmp.write_text(json.dumps(obj, ensure_ascii=False, indent=2), encoding="utf-8")
-        tmp.replace(path)
+        # Distinct staging files prevent concurrent writers from sharing a .tmp.
+        payload = json.dumps(obj, ensure_ascii=False, indent=2)
+        fd, name = tempfile.mkstemp(prefix="." + path.name + ".", suffix=".tmp", dir=path.parent)
+        tmp = Path(name)
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as stream:
+                stream.write(payload)
+                stream.flush()
+                os.fsync(stream.fileno())
+            for attempt in range(7):
+                try:
+                    tmp.replace(path)
+                    break
+                except PermissionError as error:
+                    # Windows scanners/readers can briefly hold rename handles.
+                    # Keep the old file intact; permanent denials still surface.
+                    if getattr(error, "winerror", None) not in (5, 32, 33) or attempt == 6:
+                        raise
+                    time.sleep(.01 * 2 ** attempt)
+        finally:
+            try:
+                tmp.unlink(missing_ok=True)
+            except OSError:
+                pass
 
 
 class Store:

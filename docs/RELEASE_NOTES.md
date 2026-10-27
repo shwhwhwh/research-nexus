@@ -4,6 +4,7 @@
 - Includes LICENSE, LICENSING.json, commercial inquiry terms, contribution agreement and preserved historical MIT notice. Only newly licensed original material is covered by the new restricted grant; prior MIT material remains MIT.
 - Old public release downloads are withdrawn after the new release is verified. Historical tags and grants are not rewritten.
 - Product features remain those of v0.7.0; no new model or external-account behavior is introduced.
+- Release verification exposed transient Windows rename failures during task-state saves. Use unique staging files and bounded retries for Windows sharing/access errors, preserving the previous file on failure; covered by concurrent-writer and failure regression tests.
 
 # Licensing transition — 2026-10-27
 
