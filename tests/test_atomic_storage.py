@@ -21,13 +21,23 @@ class AtomicStorageTests(unittest.TestCase):
 
     def test_concurrent_writers_use_distinct_complete_staging_files(self):
         barrier = threading.Barrier(2)
+        stage_lock = threading.Lock()
         stages = []
         original = Path.replace
 
         def replace(source, target):
-            stages.append(source)
-            self.assertIn(json.loads(source.read_text(encoding="utf-8"))["value"], (1, 2))
-            barrier.wait(timeout=3)
+            with stage_lock:
+                first_attempt = source not in stages
+                if first_attempt:
+                    stages.append(source)
+            if first_attempt:
+                self.assertIn(json.loads(source.read_text(encoding="utf-8"))["value"], (1, 2))
+                barrier.wait(timeout=3)
+                if source == stages[0]:
+                    # A retry is the same writer, not another barrier participant.
+                    error = PermissionError("sharing violation")
+                    error.winerror = 32
+                    raise error
             return original(source, target)
 
         with patch.object(Path, "replace", replace), ThreadPoolExecutor(max_workers=2) as pool:
