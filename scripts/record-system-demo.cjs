@@ -5,7 +5,7 @@ const {spawn}=require('node:child_process'),{once}=require('node:events');
 const root=path.resolve(__dirname,'..'),testOnly=process.argv.includes('--test-only');
 const runRoot=path.join(root,'artifacts','system-demo-'+Date.now()),assets=path.join(root,'docs','assets');
 fs.mkdirSync(path.join(runRoot,'web'),{recursive:true});fs.mkdirSync(assets,{recursive:true});
-for(const name of ['index.html','app.js','appearance.js','style.css','systems.js','systems.css','designer.js','designer.css','icon.png','icon.svg'])fs.copyFileSync(path.join(root,'web',name),path.join(runRoot,'web',name));
+for(const name of ['index.html','app.js','appearance.js','style.css','systems.js','systems.css','designer.js','graph-layout.js','designer.css','icon.png','icon.svg'])fs.copyFileSync(path.join(root,'web',name),path.join(runRoot,'web',name));
 app.setPath('userData',path.join(runRoot,'profile'));app.on('window-all-closed',()=>{});nativeTheme.themeSource='light';
 let backend,win,address,csrf,encoder,encoderExit,frames=0,exeChoice=0,encoderError='';const checkpoints=[];
 const delay=ms=>new Promise(ok=>setTimeout(ok,ms));
@@ -85,6 +85,20 @@ app.whenReady().then(async()=>{
   await caption('Start with a template. Extend it in the DIY designer.','先使用系统模板，再通过 DIY 设计器扩展数据流。');await hold(2.5);
   if(testOnly){
     await click('[data-page=designer]');await until(()=>wc.executeJavaScript('!!document.querySelector(".flow-canvas")'),'DIY canvas missing');await delay(350);await shot('08-diy-canvas');
+    await click('[data-d=save]');await delay(250);
+    const graph=(await api('/api/designer')).project;
+    graph.nodes.push({id:'demo-source',name:'Sample papers',kind:'folder',description:'Fictional paper JSON input',x:80,y:500},{id:'demo-notes',name:'Reading list',kind:'folder',description:'Local Markdown output',x:400,y:500});
+    graph.edges.push({id:'demo-alpha-flow',source:'openresearch',target:'alphaxiv',purpose:'Organize project papers in alphaXiv',data_type:'项目论文 / 分类',schedule:'manual',sample:[]},{id:'demo-zotero-flow',source:'openresearch',target:'zotero',purpose:'Save source notes to Zotero',data_type:'引用原文 / 笔记',schedule:'manual',sample:[]},{id:'demo-output',source:'demo-source',target:'demo-notes',purpose:'Create reading list',data_type:'JSON → Markdown',schedule:'manual',sample:[]});
+    await api('/api/designer/save',graph);await until(()=>wc.executeJavaScript('document.querySelectorAll(".flow-node").length===5'),'Five-tool fixture not rendered');
+    await wc.insertCSS('#demo-caption,#demo-badge,#demo-cursor{display:none!important}');
+    for(const mode of ['orbital','structured']){
+      await click('[data-d=layout-'+mode+']');
+      await until(async()=>(await api('/api/designer')).project.layout===mode,'Layout not persisted');
+      await delay(300);await shot('10-'+mode+'-light');
+      nativeTheme.themeSource='dark';await delay(350);await shot('11-'+mode+'-dark');
+      nativeTheme.themeSource='light';await delay(300);
+    }
+    await click('[data-d=layout-orbital]');await delay(400);
     const controls=await wc.executeJavaScript(`(()=>{const d=document.querySelector('#research-setup-dialog'),f=d.querySelector('form');d.showModal();f.elements.auto_discover.checked=true;f.elements.auto_discover.dispatchEvent(new Event('change',{bubbles:true}));f.elements.classifier.value='codex';return{projectsDisabled:f.elements.projects.disabled,projectsNotRequired:!f.elements.projects.required,futureConsentVisible:!document.querySelector('#research-future-consent').hidden,futureConsentUnchecked:!f.elements.allow_future_model_context.checked};})()`);
     assert.deepEqual(controls,{projectsDisabled:true,projectsNotRequired:true,futureConsentVisible:true,futureConsentUnchecked:true});
     await delay(350);await shot('09-project-onboarding');
@@ -96,7 +110,7 @@ app.whenReady().then(async()=>{
   await caption('Research Nexus. Your tools, one research system.','由 Rui Li（@shwhwhwh）创建和维护 · MIT 开源。');await hold(2.5);
   assert.deepEqual(blocked,[]);
   if(encoder){encoder.stdin.end();const [code]=await encoderExit;if(code!==0)throw Error(encoderError);}
-  const report={passed:true,isolated_storage:true,simulated_services:true,real_archive_engine:true,real_accounts_opened:false,external_network_disabled:true,template_download_import:true,setup_required_before_enable:true,daily_interval:86400,papers:2,pdf_files:2,repeat_creates_no_duplicates:true,diy_canvas_available:true,diy_invalid_request_rejected:true,frames,duration_seconds:frames/12,checkpoints};
+  const report={passed:true,isolated_storage:true,simulated_services:true,real_archive_engine:true,real_accounts_opened:false,external_network_disabled:true,template_download_import:true,setup_required_before_enable:true,daily_interval:86400,papers:2,pdf_files:2,repeat_creates_no_duplicates:true,diy_canvas_available:true,layout_templates_verified:['orbital','structured'],layout_themes_verified:['light','dark'],diy_invalid_request_rejected:true,frames,duration_seconds:frames/12,checkpoints};
   fs.writeFileSync(path.join(runRoot,'report.json'),JSON.stringify(report,null,2));
   if(!testOnly)fs.copyFileSync(path.join(runRoot,'01-overview.png'),path.join(assets,'demo-poster.png'));
   console.log(JSON.stringify({...report,checkpoints:undefined,runRoot}));await cleanup();app.quit();

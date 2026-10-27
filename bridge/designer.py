@@ -16,6 +16,7 @@ import uuid
 
 import requests
 
+from .project_events import ProjectEvents
 from .domain import BridgeError
 from .storage import Config, now
 from .research_flow import ResearchFlow, validate_options, DEFAULT_CATEGORIES
@@ -77,7 +78,11 @@ class Designer:
         self.lock = threading.RLock()
         self.stop_event = threading.Event()
         self.processes, self.workers, self.agent_cache = {}, set(), None
-        self.next_discovery = time.monotonic() + 5
+        self.discovery_pending = False
+        self.discovery_retry_at = 0
+        self.discovery_backoff = 5
+        self.discovery_wakeup = threading.Event()
+        self.project_events = ProjectEvents(lambda: self.research.base(), self.auto_discovery_enabled, self.project_event, self.stop_event)
         self.project = self._read(self.base / "project.json", None) or self.default_project()
         self.runs = self._read(self.base / "runs.json", [])
         for run in self.runs:
@@ -115,7 +120,7 @@ class Designer:
                     "versions": copy.deepcopy([{**r, "current_contract": r.get("contract") == contracts.get(r["edge_id"])}
                                                for r in reversed(self.runs) if r.get("kind") == "build" and r.get("plan")]),
                     "agents": self.agents(), "busy": bool(self.workers), "ops": OPS,
-                    "discovery": self.research.discovery_status()}
+                    "discovery": {**self.research.discovery_status(), "events": dict(self.project_events.status), "pending": self.discovery_pending}}
 
     def save_graph(self, data):
         with self.lock:
@@ -140,7 +145,7 @@ class Designer:
                 if node.get('credential_env') and not re.fullmatch(r'[A-Z][A-Z0-9_]*(?:[ ,]+[A-Z][A-Z0-9_]*)*', node['credential_env']):
                     raise BridgeError('授权变量只填写大写变量名，多个变量用逗号分隔。')
                 for axis in ("x", "y"):
-                    node[axis] = max(-4000, min(8000, float(node.get(axis, 100))))
+                    node[axis] = max(-100000, min(100000, float(node.get(axis, 100))))
                 if node.get("builtin") and not any(n.get("builtin") == node["builtin"] and n["id"] == node["id"] for n in self.default_project()["nodes"]):
                     raise BridgeError("内置工具标识不能自定义。")
                 nodes.append(node)
@@ -170,6 +175,7 @@ class Designer:
             if not {"alphaxiv", "zotero", "openresearch"} <= ids or "existing-archive" not in seen:
                 raise BridgeError("内置工具和原归档流程由现有设置管理，不能从画布移除。")
             self.project.update(name=str(data.get("name", "我的科研系统"))[:80], nodes=nodes, edges=edges,
+                                layout=data.get("layout", self.project.get("layout", "orbital")) if data.get("layout", self.project.get("layout", "orbital")) in ("orbital", "structured") else "orbital",
                                 revision=self.project["revision"] + 1)
             # Activation is bound to the exact source/target/purpose contract.
             for edge_id, active in list(self.project["active"].items()):
@@ -248,12 +254,20 @@ class Designer:
                 scopes.append((copy.deepcopy(spec['research_scope']), 'alpha' if spec['target']['builtin'] == 'alpha' else 'zotero'))
             if not scopes:
                 raise BridgeError('请先启用自动发现模式的项目文献连线。')
-            self.next_discovery = time.monotonic() + 60
+            self.discovery_pending = False
             self.workers.add('project-discovery')
             def work():
                 try:
                     previous = self.research.discovery_status()
                     status = self.research.discover(scopes)
+                    with self.lock:
+                        if status.get('error'):
+                            self.discovery_pending = True
+                            self.discovery_retry_at = time.monotonic() + self.discovery_backoff
+                            self.discovery_backoff = min(300, self.discovery_backoff * 2)
+                        else:
+                            self.discovery_retry_at = 0
+                            self.discovery_backoff = 5
                     if status.get('new_projects') or status.get('error') != previous.get('error', ''):
                         with self.lock:
                             event = self._new_run('project-discovery', 'discovery')
@@ -265,6 +279,7 @@ class Designer:
                     with self.lock:
                         self.workers.discard('project-discovery')
                         self._save()
+                        self.discovery_wakeup.set()
             threading.Thread(target=work, daemon=True).start()
             return {'queued': True}
 
@@ -562,6 +577,10 @@ Integration specification follows:\n""" + json.dumps(spec, ensure_ascii=False)
             if run['plan'].get('readiness') == 'needs_setup':
                 raise BridgeError('这条集成仍有配置缺口：' + '；'.join(run['plan'].get('requirements', [])))
             self.project["active"][edge_id] = {"version": version, "contract": run["contract"], "time": now()}
+            if self.edge(edge_id).get("research_scope", {}).get("auto_discover") and self.project_events.status.get("connected"):
+                self.discovery_pending = True
+                self.discovery_retry_at = 0
+                self.discovery_wakeup.set()
             self._save()
             return self.public()
 
@@ -808,14 +827,14 @@ Integration specification follows:\n""" + json.dumps(spec, ensure_ascii=False)
         with self.lock:
             if self.workers or self.stop_event.is_set():
                 return
-            if time.monotonic() >= self.next_discovery:
-                self.next_discovery = time.monotonic() + 60
-                if any(e.get('research_scope', {}).get('auto_discover') and e['id'] in self.project['active'] for e in self.project['edges']):
+            if self.discovery_pending and time.monotonic() >= self.discovery_retry_at:
+                if self.auto_discovery_enabled():
                     try:
                         self.discover_projects()
                     except BridgeError:
-                        pass
+                        self.discovery_retry_at = time.monotonic() + 5
                     return
+                self.discovery_pending = False
             for edge in self.project["edges"]:
                 interval = {"hourly": 3600, "daily": 86400}.get(edge.get("schedule"))
                 if interval and not edge.get("builtin") and edge["id"] in self.project["active"] and time.time() - self.project["last_run"].get(edge["id"], 0) >= interval:
@@ -825,11 +844,33 @@ Integration specification follows:\n""" + json.dumps(spec, ensure_ascii=False)
                         pass
                     break
 
+    def auto_discovery_enabled(self):
+        with self.lock:
+            return any(e.get('research_scope', {}).get('auto_discover') and e['id'] in self.project['active']
+                       for e in self.project['edges'])
+
+    def project_event(self, reason, project_id=None):
+        with self.lock:
+            if not self.auto_discovery_enabled():
+                return
+            if reason == 'project' and project_id in self.research.discovery_status().get('known_ids', []):
+                return
+            self.discovery_pending = True
+            self.discovery_retry_at = 0
+            self.discovery_wakeup.set()
+            # Begin immediately when idle; busy tasks leave the notification pending.
+            self.tick()
+
     def shutdown(self):
         self.stop_event.set()
+        self.discovery_wakeup.set()
+        self.project_events.close()
         for process in list(self.processes.values()):
             self._terminate(process)
 
     def scheduler(self):
-        while not self.stop_event.wait(5):
+        threading.Thread(target=self.project_events.run, daemon=True, name='orx-project-events').start()
+        while not self.stop_event.is_set():
+            self.discovery_wakeup.wait(1)
+            self.discovery_wakeup.clear()
             self.tick()

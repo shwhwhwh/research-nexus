@@ -36,11 +36,23 @@ PDF highlighting requires an exact quoted string and a unique text match in the 
 
 ## Automatically onboard future projects
 
-In **Connect project literature**, enable **Automatically onboard all current and future OpenResearch projects**, select daily checks, and explicitly authorize future-project context if using semantic classification. Generate, test and activate both edges once for this mode. New projects are then data covered by the tested contract: RN checks approximately every minute and creates separate empty alphaXiv/Zotero folders. References and source notes enter the next daily archive batch without rebuilding the plan.
+In **Connect project literature**, enable **Automatically onboard all current and future OpenResearch projects**, select daily checks, and explicitly authorize future-project context if using semantic classification. Generate, test and activate both edges once for this mode. New projects are then data covered by the tested contract: RN subscribes to the local `/api/events` SSE stream and handles `project.updated` notifications immediately, creating separate empty alphaXiv/Zotero folders. References and source notes enter the next daily archive batch without rebuilding the plan.
 
 Future-project consent is bound to the local OpenResearch address and model provider. A fixed-project grant cannot authorize this mode; Codex grants do not cover Claude. Pausing one edge stops onboarding writes to that destination; pausing both stops all onboarding. Deleting a source project never deletes archives. Renaming a project preserves its original folder identity/name.
 
-Automatic mode stores completion receipts separately for each destination. It processes new or unfinished citations, reuses classifications, and continues remaining work in later daily batches within the configured paper cap. Failed old references cannot permanently precede new ones. Read-only previews do not mark delivery complete. The DIY page exposes discovery status, errors and a **Check new projects** action. RN must stay running on an awake computer with the local OpenResearch service available.
+Automatic mode stores completion receipts separately for each destination. It processes new or unfinished citations, reuses classifications, and continues remaining work in later daily batches within the configured paper cap. Failed old references cannot permanently precede new ones. Read-only previews do not mark delivery complete. Startup and reconnect reconcile missed projects. Events queue behind busy tasks; failed onboarding retries with backoff. Idle operation does not periodically query the project list. The DIY page exposes event connection, queue and discovery status, errors and a **Check new projects** action. RN must stay running on an awake computer with the local OpenResearch service available.
+
+## Layout templates
+
+Use **Ptolemaic · Orbits** (托勒密 · 轨道) or **Structured · Data flow** (规整 · 数据流) at the top left of the DIY canvas. The orbital view arranges tools around a visual RN controller with elliptical guides and curved data-flow edges. It is a relationship diagram, not an astronomical simulation. The structured view places tools in directional layers with orthogonal routes, bypassing cards for backward and spanning edges. Disconnected subsystems have their own rows.
+
+Switching templates rearranges and saves the graph; **Rearrange** restores the selected template after manual dragging. Presentation is excluded from integration contracts: layouts preserve active versions and require no agent rebuild. Both templates follow light/dark/system appearance. No nodes or data-flow edges are removed.
+
+Isolated screenshots below use fictional data and simulated services.
+
+![Orbital template](assets/diy-orbital.png)
+
+![Structured template](assets/diy-structured.png)
 
 ## Operating limits
 

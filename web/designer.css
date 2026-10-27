@@ -28,3 +28,11 @@ body.workspace-fullscreen.designer-open #main{margin:0;padding:0;height:100vh}
 
 #research-setup-dialog{max-height:calc(100vh - 64px);overflow:auto}
 .designer-dialog .field[hidden]{display:none}
+
+/* Celestial and drafting templates share the user's light/dark palette. */
+.layout-switch{position:absolute;top:55px;left:22px;display:flex;gap:3px;padding:4px;border:1px solid var(--border);border-radius:10px;background:var(--surface);z-index:2;box-shadow:0 4px 16px #00000006}
+.layout-switch button{border:0;border-radius:6px;background:transparent;color:var(--muted);font:13px/20px var(--font-ui-family);padding:6px 11px;cursor:pointer}.layout-switch button[aria-pressed=true]{background:var(--hover);color:var(--ink);font-weight:590}.layout-switch button:last-child{border-left:1px solid var(--border);border-radius:0;margin-left:4px}
+.celestial-guides{pointer-events:none;fill:none;stroke:var(--faint);stroke-width:1;opacity:.27}.celestial-guides>path{stroke-dasharray:2 10}.celestial-guides>ellipse:nth-child(2){stroke-dasharray:2 7}.celestial-guides text{stroke:none;fill:var(--ink);font:600 22px var(--font-ui-family)}.celestial-guides .celestial-caption{font:9px var(--font-ui-family);letter-spacing:1px}
+.designer-board[data-layout=orbital]{background:radial-gradient(ellipse at center,color-mix(in srgb,var(--surface) 55%,transparent),transparent 72%),var(--bg)}
+.designer-board[data-layout=orbital] .flow-dot{opacity:.22}.designer-board[data-layout=structured] .flow-dot{opacity:.35}
+.flow-edge-line{stroke-linejoin:round;stroke-linecap:round}.flow-edge.enabled .flow-edge-line{stroke:color-mix(in srgb,var(--green) 70%,var(--muted))}.flow-node-body{stroke-width:1.2}.flow-edge-label{fill:var(--surface)}.flow-edge text{font-size:13px}.flow-node-title{font-size:15px}.flow-node-kind,.flow-node-description{font-size:13px}.board-help{max-width:calc(100% - 40px)}

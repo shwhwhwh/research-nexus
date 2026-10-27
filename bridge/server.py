@@ -21,7 +21,7 @@ def serve(root: Path, port=0, *, engine_factory=Engine):
     systems = Systems(root, engine)
     csrf = secrets.token_urlsafe(32)
     class Handler(BaseHTTPRequestHandler):
-        server_version = "ResearchNexus/0.5"
+        server_version = "ResearchNexus/0.6"
 
         def log_message(self, *args):
             pass
@@ -81,7 +81,7 @@ def serve(root: Path, port=0, *, engine_factory=Engine):
                     return self.send(200, file.read_bytes(), "application/pdf")
                 if path == "/icon.png":
                     return self.send(200, (root / "web" / "icon.png").read_bytes(), "image/png")
-                files = {"/": "index.html", "/app.js": "app.js", "/appearance.js": "appearance.js", "/style.css": "style.css", "/icon.svg": "icon.svg", "/designer.js": "designer.js", "/designer.css": "designer.css", "/systems.js": "systems.js", "/systems.css": "systems.css"}
+                files = {"/": "index.html", "/app.js": "app.js", "/appearance.js": "appearance.js", "/style.css": "style.css", "/icon.svg": "icon.svg", "/designer.js": "designer.js", "/graph-layout.js": "graph-layout.js", "/designer.css": "designer.css", "/systems.js": "systems.js", "/systems.css": "systems.css"}
                 if path in files:
                     file = root / "web" / files[path]
                     content = file.read_text(encoding="utf-8")

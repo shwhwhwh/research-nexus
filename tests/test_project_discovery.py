@@ -160,7 +160,6 @@ class ProjectDiscoveryTests(unittest.TestCase):
         self.texts['two'] = 'New reference https://arxiv.org/abs/2203.15556'
         for edge in ('orx-project-alpha', 'orx-project-zotero'):
             d.project['last_run'][edge] = time.time() - 86401
-        d.next_discovery = float('inf')
         for _ in range(2):
             d.tick(); self.wait(d)
             self.assertEqual(d.runs[-1]['status'], 'success')
@@ -171,13 +170,12 @@ class ProjectDiscoveryTests(unittest.TestCase):
             self.assertEqual(d.runs[-1]['result']['source']['citations'], 0)
         self.assertEqual(len(calls), 2)
 
-    def test_paused_destinations_are_not_written_by_discovery_and_scan_is_throttled(self):
+    def test_paused_destinations_are_not_written_and_idle_has_no_project_polling(self):
         d = self.designer()
         d.research_setup({'research_scope': self.scope})
         self.activate(d)
         d.disable('orx-project-zotero')
-        d.next_discovery = 0
-        d.tick(); self.wait(d)
+        d.project_event('connected'); self.wait(d)
         self.assertEqual(len(self.alpha.folders), 1)
         self.assertEqual(len(self.zotero.collections), 0)
         with patch.object(d.research, 'discover') as discover:
@@ -185,9 +183,59 @@ class ProjectDiscoveryTests(unittest.TestCase):
             discover.assert_not_called()
         d.disable('orx-project-alpha')
         self.projects.append({'id': 'two', 'name': 'No Auto Writes'})
-        d.next_discovery = 0
-        d.tick(); self.wait(d)
+        d.project_event('connected'); self.wait(d)
         self.assertEqual(len(self.alpha.folders), 1)
+
+    def test_project_event_queues_while_busy_then_onboards_without_new_plan(self):
+        d = self.designer()
+        d.research_setup({'research_scope': self.scope})
+        self.activate(d)
+        d.project_event('connected'); self.wait(d)
+        before = copy.deepcopy(d.project['active'])
+        self.projects.append({'id': 'instant', 'name': 'Instant Project'})
+        d.workers.add('fixture-busy')
+        d.project_events.handle('project.updated', json.dumps({'project': self.projects[-1]}))
+        self.assertTrue(d.discovery_pending)
+        self.assertEqual(len(self.alpha.folders), 1)
+        d.workers.clear()
+        d.tick(); self.wait(d)
+        self.assertEqual(len(self.alpha.folders), 2)
+        self.assertEqual(d.project['active'], before)
+        with patch.object(d.research, 'discover') as discover:
+            d.project_events.handle('project.updated', json.dumps({'project': self.projects[-1]}))
+            d.tick()
+            discover.assert_not_called()
+
+    def test_reconnect_catches_missed_projects_and_retries_failed_folder_creation(self):
+        d = self.designer()
+        d.research_setup({'research_scope': self.scope})
+        self.activate(d)
+        d.project_event('connected'); self.wait(d)
+        self.projects.append({'id': 'offline', 'name': 'Created Offline'})
+        original = d.research.ensure_project_roots
+        with patch.object(d.research, 'ensure_project_roots', side_effect=BridgeError('Temporary outage')):
+            d.project_event('connected'); self.wait(d)
+        self.assertTrue(d.discovery_pending)
+        self.assertGreater(d.discovery_retry_at, time.monotonic())
+        d.discovery_retry_at = 0
+        d.tick(); self.wait(d)
+        self.assertFalse(d.discovery_pending)
+        self.assertEqual(len(self.alpha.folders), 2)
+
+    def test_layout_change_retains_active_contracts(self):
+        d = self.designer()
+        d.research_setup({'research_scope': self.scope})
+        self.activate(d)
+        active = copy.deepcopy(d.project['active'])
+        for layout in ('orbital', 'structured'):
+            graph = copy.deepcopy(d.project)
+            graph['layout'] = layout
+            for n in graph['nodes']:
+                n['x'] += 100
+            d.save_graph(graph)
+            self.assertEqual(d.project['active'], active)
+            self.assertEqual(d.project['layout'], layout)
+        self.assertEqual(Designer(self.root, self.engine).project['layout'], 'structured')
 
     def test_failed_destination_batch_stays_pending_without_starving_new_projects(self):
         d = self.designer()

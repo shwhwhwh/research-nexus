@@ -18,9 +18,10 @@ window.NexusDesigner = (() => {
       this.root.querySelector('.designer-header p').textContent='画线 → 本地 Agent 生成版本 → 预览 → 启用。只有启用的版本才会写入目标工具。';
       this.root.insertAdjacentHTML('beforeend',`<dialog id="research-setup-dialog" class="designer-dialog"><form id="research-setup-form"><div class="designer-dialog-head"><h2>OpenResearch 项目文献流</h2><button type="button" class="icon-button" data-d="close-research">✕</button></div><p>alphaXiv 保存项目收藏与分类；其官方接口尚不支持写入笔记或高亮，因此引用原文与出处保存到 Zotero。只读取已完成对话的当前分支。</p><div class="field"><label>选择项目（可多选）</label><select id="research-projects" name="projects" multiple size="5" required></select></div><div class="field"><label>每次最多处理论文数</label><input name="max_papers" type="number" min="1" max="200" value="25" required></div><div class="field"><label>分类规则（名称与关键词，可修改 JSON）</label><textarea name="categories" rows="6">[{"name":"模型与方法","keywords":["model","architecture","transformer","模型","方法"]},{"name":"训练与优化","keywords":["training","optimizer","scaling","训练","优化"]},{"name":"数据与评测","keywords":["dataset","benchmark","evaluation","数据","评测"]}]</textarea></div><div class="field"><label>研究内容分类</label><select name="classifier"><option value="keywords">关键词规则 · 不外发正文</option><option value="codex">Codex · 语义分类</option><option value="claude">Claude Code · 语义分类</option></select><small>语义分类会将本范围内的引用上下文交给已登录的模型服务，消耗其额度；重复结果缓存。</small></div><label class="research-option"><input type="checkbox" name="allow_model_context"> 我允许将本次所选项目的引用上下文发送给所选模型服务进行分类</label><label class="research-option"><input type="checkbox" name="include_user" checked> 包含用户在对话中引用的论文</label><label class="research-option"><input type="checkbox" name="include_tools"> 包含工具返回的论文链接（标记为检索发现）</label><label class="research-option"><input type="checkbox" name="download_pdf" checked> PDF 归档到已配置的同步目录</label><label class="research-option"><input type="checkbox" name="highlight_quotes" checked> 对已核实位置的逐字引文创建 Zotero 高亮</label><div class="field"><label>启用后检查频率</label><select name="schedule"><option value="manual">手动运行</option><option value="hourly">每小时</option><option value="daily">每天</option></select></div><p class="inspector-note">创建两条草稿连线；还需生成、测试并启用各自版本。不会修改已有收藏或人工笔记。</p><button class="button primary" type="submit">添加 / 更新两条项目连线</button></form></dialog>`);
       const researchForm=this.root.querySelector('#research-setup-form');
-      researchForm.querySelector('.field').insertAdjacentHTML('beforebegin','<label class="research-option"><input type="checkbox" name="auto_discover"> 自动接入当前及未来所有 OpenResearch 项目</label><p class="inspector-note">开启后约每分钟发现新项目并建立独立文件夹；新项目沿用已启用的版本，无需逐个重新生成。每天增量同步，删除项目不会删除已归档内容。</p>');
+      researchForm.querySelector('.field').insertAdjacentHTML('beforebegin','<label class="research-option"><input type="checkbox" name="auto_discover"> 自动接入当前及未来所有 OpenResearch 项目</label><p class="inspector-note">开启后订阅 OpenResearch 项目创建事件，即时建立独立文件夹；断线重连会补查；新项目沿用已启用的版本，无需逐个重新生成。每天增量同步，删除项目不会删除已归档内容。</p>');
       researchForm.elements.allow_model_context.closest('label').insertAdjacentHTML('afterend','<label class="research-option" id="research-future-consent" hidden><input type="checkbox" name="allow_future_model_context"> 我允许将当前及未来自动接入项目的引用上下文发送给所选模型服务进行语义分类</label>');
       this.root.querySelector('.designer-header').insertAdjacentHTML('afterend','<div class="designer-discovery" hidden><span id="discovery-status"></span><button class="button small" data-d="discover">检查新项目</button></div>');
+      this.root.querySelector('.designer-board').insertAdjacentHTML('beforeend',`<div class="layout-switch" role="group" aria-label="数据流图排版"><button data-d="layout-orbital" aria-pressed="false">◉ 托勒密 · 轨道</button><button data-d="layout-structured" aria-pressed="false">▦ 规整 · 数据流</button><button data-d="arrange" title="按当前模板重新排布">重新排布</button></div>`);
       root.addEventListener('click',this.click);root.addEventListener('input',this.input);root.addEventListener('change',this.input);root.addEventListener('submit',this.submit);
       this.board.addEventListener('pointerdown',event=>this.pointerDown(event));this.board.addEventListener('pointermove',event=>this.pointerMove(event));this.board.addEventListener('pointerup',event=>this.pointerUp(event));this.board.addEventListener('pointercancel',()=>{this.drag=null;this.preview=null;this.paint();});
       this.board.addEventListener('wheel',event=>{if(event.ctrlKey||event.metaKey){event.preventDefault();this.zoom(event.deltaY<0?.1:-.1);}},{passive:false});
@@ -47,8 +48,9 @@ window.NexusDesigner = (() => {
         const graphStamp=JSON.stringify(data.project),graphChanged=graphStamp!==this.graphStamp;this.graphStamp=graphStamp;
         if(!this.dirty&&!this.drag)this.project=structuredClone(data.project);
         if(first){
-          try{const draft=JSON.parse(localStorage.getItem('rn-designer-draft'));if(draft?.base_revision===data.project.revision&&draft.project.id===data.project.id){this.project={...data.project,name:draft.project.name,nodes:draft.project.nodes,edges:draft.project.edges};this.dirty=true;}}catch{}
-          this.selection={type:'edge',id:'existing-archive'};this.paint();this.inspect();
+          try{const draft=JSON.parse(localStorage.getItem('rn-designer-draft'));if(draft?.base_revision===data.project.revision&&draft.project.id===data.project.id){this.project={...data.project,name:draft.project.name,nodes:draft.project.nodes,edges:draft.project.edges,layout:draft.project.layout};this.dirty=true;}}catch{}
+          if(!this.project.layout){this.project.layout='orbital';this.project.nodes=window.NexusGraph.arrange(this.project.nodes,this.project.edges,'orbital');this.markDirty();}
+          this.selection=null;this.paint();this.inspect();requestAnimationFrame(()=>this.fit());
         }
         const focused=this.inspector.contains(document.activeElement)&&document.activeElement.matches('input,textarea,select');
         const inspectorStamp=JSON.stringify({selection:this.selection,active:data.project.active,versions:(data.versions||[]).map(v=>[v.id,v.tested,v.status]),runs:data.runs.map(r=>[r.id,r.status])});
@@ -58,8 +60,8 @@ window.NexusDesigner = (() => {
         if(activityStamp!==this.activityStamp){this.activityStamp=activityStamp;this.renderActivity();}
         const autoEdges=data.project.edges.filter(e=>e.research_scope?.auto_discover),activeAuto=autoEdges.some(e=>data.project.active[e.id]);
         const panel=this.root.querySelector('.designer-discovery');panel.hidden=!autoEdges.length;
-        const discovery=data.discovery||{};
-        this.root.querySelector('#discovery-status').textContent=!activeAuto?'自动接入已暂停 · 启用项目连线后恢复检查':discovery.error?'新项目检查待重试 · '+discovery.error:`自动接入当前及未来项目 · 已发现 ${discovery.projects?.length||0} 个项目${discovery.last_checked?' · 最近检查 '+new Date(discovery.last_checked*1000).toLocaleTimeString():' · 等待首次检查'}`;
+        const discovery=data.discovery||{},eventStatus=discovery.events||{},connection=eventStatus.connected?'项目事件已连接':eventStatus.state==='reconnecting'?'事件流重连中':'正在连接项目事件';
+        this.root.querySelector('#discovery-status').textContent=!activeAuto?'自动接入已暂停 · 启用项目连线后恢复检查':discovery.error?'新项目检查待重试 · '+discovery.error:`${connection}${discovery.pending?' · 新项目排队处理中':''} · 已接入 ${discovery.projects?.length||0} 个项目${discovery.last_checked?' · 最近检查 '+new Date(discovery.last_checked*1000).toLocaleTimeString():' · 等待首次检查'}`;
         panel.querySelector('button').disabled=!activeAuto||data.busy;
         this.updateStatus();
       }catch(error){if(!this.remote)this.inspector.innerHTML=`<div class="designer-empty"><h2>暂时无法读取设计器</h2><p>${esc(error.message)}</p><button class="button" data-d="retry">重试</button></div>`;}
@@ -72,15 +74,21 @@ window.NexusDesigner = (() => {
     node(id){return this.project?.nodes.find(node=>node.id===id);}
     edge(id){return this.project?.edges.find(edge=>edge.id===id);}
     versions(id){return(this.remote?.versions||this.remote?.runs||[]).filter(run=>run.kind==='build'&&run.edge_id===id&&run.plan&&run.current_contract!==false);}
-    path(edge){const a=this.node(edge.source),b=this.node(edge.target);if(!a||!b)return'';const x=a.x+210,y=a.y+66,tx=b.x,ty=b.y+66,d=Math.max(65,Math.abs(tx-x)*.5);return`M${x} ${y} C${x+d} ${y},${tx-d} ${ty},${tx} ${ty}`;}
+    path(edge){return window.NexusGraph.route(this.project.nodes,this.project.edges,edge,this.project.layout||'orbital').d;}
+    async arrange(mode){this.project.layout=mode;this.project.nodes=window.NexusGraph.arrange(this.project.nodes,this.project.edges,mode);this.markDirty();this.fit();await this.save();this.toast('已应用并保存排版；已启用的数据流继续运行。');}
     paint(){
       if(!this.project)return;
       this.world.setAttribute('transform',`translate(${this.camera.x} ${this.camera.y}) scale(${this.camera.z})`);
-      let html=this.project.edges.map(edge=>{
+      const mode=this.project.layout||'orbital';this.root.querySelector('.designer-board').dataset.layout=mode;
+      for(const button of this.root.querySelectorAll('.layout-switch [aria-pressed]'))button.setAttribute('aria-pressed',String(button.dataset.d==='layout-'+mode));
+      let guides='';
+      if(mode==='orbital'&&this.project.nodes.length){const ns=this.project.nodes,cx=(Math.min(...ns.map(n=>n.x))+Math.max(...ns.map(n=>n.x+210)))/2,cy=(Math.min(...ns.map(n=>n.y))+Math.max(...ns.map(n=>n.y+132)))/2,rx=(Math.max(...ns.map(n=>n.x))-Math.min(...ns.map(n=>n.x)))/2,ry=(Math.max(...ns.map(n=>n.y))-Math.min(...ns.map(n=>n.y)))/2;guides=`<g class="celestial-guides" aria-hidden="true"><ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}"/><ellipse cx="${cx}" cy="${cy}" rx="${rx+30}" ry="${ry+30}"/><path d="M${cx-rx-60} ${cy} H${cx+rx+60} M${cx} ${cy-ry-60} V${cy+ry+60}"/><circle cx="${cx}" cy="${cy}" r="48"/><circle cx="${cx}" cy="${cy}" r="58"/><text x="${cx}" y="${cy-2}" text-anchor="middle">RN</text><text class="celestial-caption" x="${cx}" y="${cy+18}" text-anchor="middle">CONTROLLER</text></g>`;}
+      const routes=new Map(window.NexusGraph.routes(this.project.nodes,this.project.edges,mode).map(r=>[r.id,r]));
+      let html=guides+this.project.edges.map(edge=>{
         const active=edge.builtin||this.project.active[edge.id];const selected=this.selection?.id===edge.id;
         const a=this.node(edge.source),b=this.node(edge.target);if(!a||!b)return'';
-        const label=edge.data_type||'说明数据用途';const x=(a.x+210+b.x)/2,y=(a.y+b.y)/2+42;
-        return`<g class="flow-edge ${selected?'selected':''} ${active?'enabled':''}" data-edge="${esc(edge.id)}" role="button" tabindex="0" aria-label="${esc(a.name+' 到 '+b.name)}"><title>${esc(edge.purpose||label)}</title><path class="flow-edge-hit" d="${this.path(edge)}"/><path class="flow-edge-line" d="${this.path(edge)}" marker-end="url(#flow-arrow)"/><rect class="flow-edge-label" x="${x-50}" y="${y-13}" width="100" height="26" rx="13"/><text x="${x}" y="${y+5}" text-anchor="middle">${esc(short(label,13))}</text></g>`;
+        const label=edge.data_type||'说明数据用途';const {x,y,width}=routes.get(edge.id);
+        return`<g class="flow-edge ${selected?'selected':''} ${active?'enabled':''}" data-edge="${esc(edge.id)}" role="button" tabindex="0" aria-label="${esc(a.name+' 到 '+b.name)}"><title>${esc(edge.purpose||label)}</title><path class="flow-edge-hit" d="${this.path(edge)}"/><path class="flow-edge-line" d="${this.path(edge)}" marker-end="url(#flow-arrow)"/><rect class="flow-edge-label" x="${x-width/2}" y="${y-14}" width="${width}" height="28" rx="8"/><text x="${x}" y="${y+5}" text-anchor="middle">${esc(short(label,23))}</text></g>`;
       }).join('');
       html+=this.project.nodes.map(node=>{
         const symbol=node.builtin==='alpha'?'α':node.builtin==='zotero'?'Z':node.builtin==='openresearch'?'◩':node.kind==='website'?'↗':node.kind==='folder'?'▤':'◇';
@@ -133,7 +141,9 @@ window.NexusDesigner = (() => {
       const button=event.target.closest('[data-d]');if(!button)return;
       const action=button.dataset.d;
       try{
-        if(action==='add')this.root.querySelector('dialog').showModal();
+        if(action.startsWith('layout-'))await this.arrange(action.slice(7));
+        else if(action==='arrange')await this.arrange(this.project.layout||'orbital');
+        else if(action==='add')this.root.querySelector('dialog').showModal();
         else if(action==='research'){
           if(this.dirty)await this.save();
           const data=await this.api('/api/designer/research-projects');
@@ -248,7 +258,7 @@ window.NexusDesigner = (() => {
       const id=uid('flow');this.project.edges.push({id,source,target,purpose:'',data_type:'数据流',schedule:'manual',sample:[]});this.connecting=null;this.markDirty();this.select('edge',id);
     }
     zoom(amount){this.camera.z=Math.max(.35,Math.min(1.8,this.camera.z+amount));this.paint();this.updateStatus();}
-    fit(){if(!this.project?.nodes.length)return;const nodes=this.project.nodes,minX=Math.min(...nodes.map(n=>n.x)),minY=Math.min(...nodes.map(n=>n.y)),maxX=Math.max(...nodes.map(n=>n.x+210)),maxY=Math.max(...nodes.map(n=>n.y+132));this.camera.z=Math.max(.35,Math.min(1,(this.board.clientWidth-80)/(maxX-minX),(this.board.clientHeight-110)/(maxY-minY)));this.camera.x=40-minX*this.camera.z;this.camera.y=50-minY*this.camera.z;this.paint();this.updateStatus();}
+    fit(){if(!this.project?.nodes.length)return;const {minX,minY,maxX,maxY}=window.NexusGraph.bounds(this.project.nodes,this.project.edges,this.project.layout||'orbital');this.camera.z=Math.max(.12,Math.min(1,(this.board.clientWidth-100)/(maxX-minX),(this.board.clientHeight-190)/(maxY-minY)));this.camera.x=(this.board.clientWidth-(maxX-minX)*this.camera.z)/2-minX*this.camera.z;this.camera.y=96+(this.board.clientHeight-190-(maxY-minY)*this.camera.z)/2-minY*this.camera.z;this.paint();this.updateStatus();}
     renderActivity(){
       this.activity.classList.toggle('hidden',!this.logOpen);this.root.querySelector('.designer-grid').classList.toggle('with-activity',this.logOpen);if(!this.logOpen)return;
       const runs=this.remote?.runs||[],focus=runs.find(r=>r.id===this.focusRun)||runs[0];

@@ -1,3 +1,11 @@
+# v0.6.0 source build — Project events and layout templates
+
+- OpenResearch project onboarding uses its official local SSE stream (`/api/events`, `project.updated`), replacing RN's minute project-list polling.
+- Startup/reconnect reconciliation, busy-task queuing, and failure backoff preserve onboarding after interruptions; citation delivery remains daily.
+- Two saved, theme-aware diagram templates: Ptolemaic orbital arrangement and structured directional data flow, with curved/orthogonal routes and readable labels.
+- Layout changes retain active integration contracts, all tools, edges, consent and delivery receipts.
+- Validation: 95 Python tests, 5 graph layout tests, 6 desktop lifecycle tests, syntax checks, and isolated five-tool UI checks in light/dark themes.
+
 # v0.5.0 source build — Automatic project onboarding
 
 - Opt-in discovery of all current and future OpenResearch projects, independent empty folders, and daily incremental citation delivery.
