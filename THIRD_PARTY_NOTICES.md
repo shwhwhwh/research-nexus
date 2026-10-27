@@ -1,6 +1,6 @@
 # Third-party notices and design attribution
 
-Research Nexus's original contributions are copyright © 2026 Rui Li (@shwhwhwh), MIT licensed. Dependencies retain their own licenses. They are installed separately and are not re-licensed by this repository.
+Research Nexus's original contributions are copyright © 2026 Rui Li (@shwhwhwh), Subject to LICENSE and LICENSE_HISTORY.md; prior MIT grants remain in force. Dependencies retain their own licenses. They are installed separately and are not re-licensed by this repository.
 
 | Component | Role | License / source |
 | --- | --- | --- |

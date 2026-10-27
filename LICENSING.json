@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "projectId": "research-nexus",
+  "repository": "https://github.com/shwhwhwh/research-nexus",
+  "rightsHolder": "Rui Li (@shwhwhwh)",
+  "rightsHolderLogin": "shwhwhwh",
+  "policyId": "LicenseRef-Prototype-Plan-Personal-Noncommercial-1.0",
+  "licenseSha256": "9881bebaa3af8f6d59d3133ab23666999f806a2bd24d80dbc5cab3cf504f5931",
+  "policyVersion": "1.0",
+  "effectiveDate": "2026-10-27",
+  "appliesTo": "Material first published under this license; previous grants and third-party rights are preserved.",
+  "commercialPermission": "separate-written-authorization",
+  "contributorAgreement": "PP-CLA-1.0",
+  "historical": [
+    {
+      "throughCommit": "45ce4b423d0b1a4881bf169d228e014b14886b7f",
+      "license": "MIT",
+      "licenseFile": "LICENSES/research-nexus-legacy-MIT.txt",
+      "licenseSha256": "efbd64aaa35cc67b5f95dae5ff69fac1ed345d1d864e1a1c6b7cff0c5aeb0ec8"
+    }
+  ]
+}

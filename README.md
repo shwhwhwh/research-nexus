@@ -10,7 +10,9 @@ Research Nexus (RN) is a local research workspace and top-level controller. Its 
 
 **v0.7 adds automatic system builds (Beta).** Submit a paper or describe a workflow; your local Codex/Claude designs a reusable blueprint, RN prepares supported components and tests/deploys its compiled channels. Export/import replays those channels without redesigning with an agent. [Automatic build guide](docs/AUTO_BUILD.md) · [中文](docs/AUTO_BUILD.zh-CN.md). Event-driven OpenResearch project onboarding, daily citation delivery, and orbital/structured graph layouts remain available. Unsupported APIs/adapters stay explicit setup requirements. The v0.3.0 downloadable release/demo below covers the previous Template 01 build.
 
-Created and maintained by **[Rui Li (@shwhwhwh)](https://github.com/shwhwhwh)**. Copyright © 2026 Rui Li. [MIT License](LICENSE); retain its copyright and permission notice when redistributing.
+Created and maintained by **[Rui Li (@shwhwhwh)](https://github.com/shwhwhwh)**. Copyright © 2026 Rui Li. **All rights reserved, with free personal study and noncommercial experiments under [LICENSE](LICENSE). Commercialization requires separate written authorization.**
+Collaboration is welcome: [contribution terms](CONTRIBUTOR_AGREEMENT.md) · [commercial inquiry](COMMERCIAL_LICENSE.md) · [historical grants](LICENSE_HISTORY.md).
+**Historical RN MIT versions remain MIT, including commercial permissions; this transition does not retroactively restrict existing MIT material.**
 
 ## System Template 01 — Literature Research System
 

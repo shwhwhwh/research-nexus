@@ -1,13 +1,7 @@
 # Project ownership / 项目归属
 
-**Research Nexus is created and maintained by Rui Li (GitHub: [@shwhwhwh](https://github.com/shwhwhwh)).**
+Research Nexus is created and maintained by **Rui Li (@shwhwhwh)**. Copyright © 2026 Rui Li. All rights reserved in new original material, subject to the express free personal-study/noncommercial-experiment grant in [LICENSE](LICENSE). Commercial use requires [separate written authorization](COMMERCIAL_LICENSE.md).
 
-Copyright © 2026 Rui Li (@shwhwhwh). The original Research Nexus source code, documentation, and project artwork in this repository are distributed under the [MIT License](LICENSE). Copies and substantial portions must retain that license's copyright and permission notice. Contributions remain attributable to their respective authors; contributing does not transfer ownership of unrelated work.
+Previously MIT-covered RN material keeps its MIT permissions; see [LICENSE_HISTORY.md](LICENSE_HISTORY.md). This notice does not reclaim existing MIT grants or claim third-party work, independent implementations, all AI output, or contributors' retained authorship. New deliberate contributions require [PP-CLA-1.0](CONTRIBUTOR_AGREEMENT.md) or separate terms.
 
-**Research Nexus 由 Rui Li（GitHub：[ @shwhwhwh](https://github.com/shwhwhwh)）创建和维护。**
-
-版权所有 © 2026 Rui Li（@shwhwhwh）。本仓库中的 Research Nexus 原创代码、文档及项目图标采用 [MIT 许可证](LICENSE)。复制或分发源码及其重要部分时须保留许可证中的版权与许可声明。社区贡献保留相应作者署名；参与贡献不意味着转让无关作品的所有权。
-
-Third-party software, services, logos, and trademarks belong to their respective owners and retain their own licenses and terms. This project's ownership statement does not claim ownership of alphaXiv, Zotero, OpenResearch, Codex, Claude Code, Antigravity, Electron, or their assets. Research Nexus is independent and is not an official product of those projects.
-
-第三方软件、服务、标识和商标归各自权利人所有，遵循其各自许可和条款。Research Nexus 为独立项目，并非上述工具的官方产品。
+中文：后续新原创内容保留全部权利，个人学习、非商业试验及协作改进免费，商业化另行授权；旧 MIT 代码保留原商业使用权限。贡献者保留署名，须明确授予项目维护和商业授权所需权利。第三方软件、服务、标识与商标归各自权利人所有。本项目独立开发，并非第三方工具的官方产品。

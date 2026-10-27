@@ -10,7 +10,7 @@ Research Nexus（RN）是本地科研工作台与顶层控制器。第一个 **S
 
 **v0.7 新增自动构建系统（Beta）。** 输入论文或文字需求，由本机 Codex / Claude 设计可复用 Blueprint，RN 准备受支持组件并测试、部署已编译通道。导出模板后，其他用户可导入复用，无需重新调用 Agent 从头设计。参见 [自动构建指南](docs/AUTO_BUILD.zh-CN.md) / [English](docs/AUTO_BUILD.md)。保留项目事件即时接入、每日引用同步及轨道 / 规整画布。未知接口与适配器明确列为待办。下方 v0.3.0 下载与视频仍展示之前的 Template 01。
 
-**由 [Rui Li（@shwhwhwh）](https://github.com/shwhwhwh) 创建和维护，版权所有 © 2026 Rui Li。** 原创代码、文档和项目图标采用 [MIT 许可证](LICENSE)，复制与分发时须保留版权及许可声明。第三方工具归各自权利人所有。
+**由 [Rui Li（@shwhwhwh）](https://github.com/shwhwhwh) 创建和维护，版权所有 © 2026 Rui Li。** 后续首次按新许可发布的原创内容保留全部权利；[个人学习、非商业试验及协作改进可免费进行](LICENSE)，商业化需[单独书面授权](COMMERCIAL_LICENSE.md)。欢迎提交 Issue 和 PR，贡献者保留署名并按[贡献条款](CONTRIBUTOR_AGREEMENT.md)授权项目维护与商业发布。**此前已发布的 MIT 版本及相应旧代码继续按 MIT 授权，包括商业使用；不追溯收费。** 参见[许可沿革](LICENSE_HISTORY.md)。第三方工具归各自权利人所有。
 
 ## System Template 01：文献科研系统
 

@@ -1,3 +1,7 @@
+# Licensing transition — 2026-10-27
+
+New first-licensed original material now uses the limited personal-study/noncommercial policy. Commercial permission is separate, collaboration remains welcome, and prior MIT source/releases retain their grants. This is a licensing/documentation transition, not a replacement of the v0.3.0 release assets. See LICENSE_HISTORY.md.
+
 # v0.7.0 source build — Reusable automatic system builds
 
 - Paper/PDF/text input → one local-agent blueprint design → component preparation → bound channel previews → deployment and activation.

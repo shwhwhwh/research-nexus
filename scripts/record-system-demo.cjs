@@ -123,7 +123,7 @@ app.whenReady().then(async()=>{
   const rejected=await fetch(address+'/api/designer/build',{method:'POST',headers:{Origin:address,'Content-Type':'application/json','X-CSRF-Token':csrf},body:'{}'});assert.equal(rejected.status,400);
   if(testOnly){await click('[data-page=systems]');await until(()=>wc.executeJavaScript('!!document.querySelector(".system-map")'),'System page missing');}
   nativeTheme.themeSource='dark';await delay(450);await hold(.5);await shot('07-dark');
-  await caption('Research Nexus. Your tools, one research system.','由 Rui Li（@shwhwhwh）创建和维护 · MIT 开源。');await hold(2.5);
+  await caption('Research Nexus. Your tools, one research system.','由 Rui Li（@shwhwhwh）创建和维护 · 当前许可见 LICENSE；历史 MIT 授权不变。');await hold(2.5);
   assert.deepEqual(blocked,[]);
   if(encoder){encoder.stdin.end();const [code]=await encoderExit;if(code!==0)throw Error(encoderError);}
   const report={passed:true,isolated_storage:true,simulated_services:true,real_archive_engine:true,real_accounts_opened:false,external_network_disabled:true,template_download_import:true,setup_required_before_enable:true,daily_interval:86400,papers:2,pdf_files:2,repeat_creates_no_duplicates:true,diy_canvas_available:true,layout_templates_verified:['orbital','structured'],automatic_builder_import_deploy_run:true,builder_export_reimport_verified:true,template_replay_agent_calls:0,layout_themes_verified:['light','dark'],diy_invalid_request_rejected:true,frames,duration_seconds:frames/12,checkpoints};
