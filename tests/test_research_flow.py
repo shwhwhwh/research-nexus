@@ -71,6 +71,13 @@ class MemoryZotero:
             if {"tag": tag} not in values:
                 values.append({"tag": tag})
 
+    def append_note_metadata(self, key, marker, revision, text):
+        body = self.items[key]['data']['note']
+        if marker not in body:
+            raise BridgeError('Source marker missing')
+        if revision not in body:
+            self.items[key]['data']['note'] += '<p>' + revision + ' ' + text + '</p>'
+
 
 class MemoryAlpha:
     def __init__(self):

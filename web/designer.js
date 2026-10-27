@@ -16,13 +16,24 @@ window.NexusDesigner = (() => {
       this.click=event=>this.onClick(event);this.input=event=>this.onInput(event);this.submit=event=>this.onSubmit(event);
       this.root.querySelector('.designer-header-actions').insertAdjacentHTML('afterbegin','<button class="button primary" data-d="research">连接项目文献</button>');
       this.root.querySelector('.designer-header p').textContent='画线 → 本地 Agent 生成版本 → 预览 → 启用。只有启用的版本才会写入目标工具。';
-      this.root.insertAdjacentHTML('beforeend',`<dialog id="research-setup-dialog" class="designer-dialog"><form id="research-setup-form"><div class="designer-dialog-head"><h2>OpenResearch 项目文献流</h2><button type="button" class="icon-button" data-d="close-research">✕</button></div><p>alphaXiv 保存项目收藏与分类；其官方接口尚不支持写入笔记或高亮，因此引用原文与出处保存到 Zotero。只读取已完成对话的当前分支。</p><div class="field"><label>选择项目（可多选）</label><select id="research-projects" name="projects" multiple size="5" required></select></div><div class="field"><label>每次最多处理论文数</label><input name="max_papers" type="number" min="1" max="200" value="25" required></div><div class="field"><label>分类规则（名称与关键词，可修改 JSON）</label><textarea name="categories" rows="6">[{"name":"模型与方法","keywords":["model","architecture","transformer","模型","方法"]},{"name":"训练与优化","keywords":["training","optimizer","scaling","训练","优化"]},{"name":"数据与评测","keywords":["dataset","benchmark","evaluation","数据","评测"]}]</textarea></div><div class="field"><label>研究内容分类</label><select name="classifier"><option value="keywords">关键词规则 · 不外发正文</option><option value="codex">Codex · 语义分类</option><option value="claude">Claude Code · 语义分类</option></select><small>语义分类会将所选项目的引用上下文交给已登录的模型服务，消耗其额度；重复结果缓存。</small></div><label class="research-option"><input type="checkbox" name="allow_model_context"> 我允许将本次所选项目的引用上下文发送给所选模型服务进行分类</label><label class="research-option"><input type="checkbox" name="include_user" checked> 包含用户在对话中引用的论文</label><label class="research-option"><input type="checkbox" name="include_tools"> 包含工具返回的论文链接（标记为检索发现）</label><label class="research-option"><input type="checkbox" name="download_pdf" checked> PDF 归档到已配置的同步目录</label><label class="research-option"><input type="checkbox" name="highlight_quotes" checked> 对已核实位置的逐字引文创建 Zotero 高亮</label><div class="field"><label>启用后检查频率</label><select name="schedule"><option value="manual">手动运行</option><option value="hourly">每小时</option><option value="daily">每天</option></select></div><p class="inspector-note">创建两条草稿连线；还需生成、测试并启用各自版本。不会修改已有收藏或人工笔记。</p><button class="button primary" type="submit">添加 / 更新两条项目连线</button></form></dialog>`);
+      this.root.insertAdjacentHTML('beforeend',`<dialog id="research-setup-dialog" class="designer-dialog"><form id="research-setup-form"><div class="designer-dialog-head"><h2>OpenResearch 项目文献流</h2><button type="button" class="icon-button" data-d="close-research">✕</button></div><p>alphaXiv 保存项目收藏与分类；其官方接口尚不支持写入笔记或高亮，因此引用原文与出处保存到 Zotero。只读取已完成对话的当前分支。</p><div class="field"><label>选择项目（可多选）</label><select id="research-projects" name="projects" multiple size="5" required></select></div><div class="field"><label>每次最多处理论文数</label><input name="max_papers" type="number" min="1" max="200" value="25" required></div><div class="field"><label>分类规则（名称与关键词，可修改 JSON）</label><textarea name="categories" rows="6">[{"name":"模型与方法","keywords":["model","architecture","transformer","模型","方法"]},{"name":"训练与优化","keywords":["training","optimizer","scaling","训练","优化"]},{"name":"数据与评测","keywords":["dataset","benchmark","evaluation","数据","评测"]}]</textarea></div><div class="field"><label>研究内容分类</label><select name="classifier"><option value="keywords">关键词规则 · 不外发正文</option><option value="codex">Codex · 语义分类</option><option value="claude">Claude Code · 语义分类</option></select><small>语义分类会将本范围内的引用上下文交给已登录的模型服务，消耗其额度；重复结果缓存。</small></div><label class="research-option"><input type="checkbox" name="allow_model_context"> 我允许将本次所选项目的引用上下文发送给所选模型服务进行分类</label><label class="research-option"><input type="checkbox" name="include_user" checked> 包含用户在对话中引用的论文</label><label class="research-option"><input type="checkbox" name="include_tools"> 包含工具返回的论文链接（标记为检索发现）</label><label class="research-option"><input type="checkbox" name="download_pdf" checked> PDF 归档到已配置的同步目录</label><label class="research-option"><input type="checkbox" name="highlight_quotes" checked> 对已核实位置的逐字引文创建 Zotero 高亮</label><div class="field"><label>启用后检查频率</label><select name="schedule"><option value="manual">手动运行</option><option value="hourly">每小时</option><option value="daily">每天</option></select></div><p class="inspector-note">创建两条草稿连线；还需生成、测试并启用各自版本。不会修改已有收藏或人工笔记。</p><button class="button primary" type="submit">添加 / 更新两条项目连线</button></form></dialog>`);
+      const researchForm=this.root.querySelector('#research-setup-form');
+      researchForm.querySelector('.field').insertAdjacentHTML('beforebegin','<label class="research-option"><input type="checkbox" name="auto_discover"> 自动接入当前及未来所有 OpenResearch 项目</label><p class="inspector-note">开启后约每分钟发现新项目并建立独立文件夹；新项目沿用已启用的版本，无需逐个重新生成。每天增量同步，删除项目不会删除已归档内容。</p>');
+      researchForm.elements.allow_model_context.closest('label').insertAdjacentHTML('afterend','<label class="research-option" id="research-future-consent" hidden><input type="checkbox" name="allow_future_model_context"> 我允许将当前及未来自动接入项目的引用上下文发送给所选模型服务进行语义分类</label>');
+      this.root.querySelector('.designer-header').insertAdjacentHTML('afterend','<div class="designer-discovery" hidden><span id="discovery-status"></span><button class="button small" data-d="discover">检查新项目</button></div>');
       root.addEventListener('click',this.click);root.addEventListener('input',this.input);root.addEventListener('change',this.input);root.addEventListener('submit',this.submit);
       this.board.addEventListener('pointerdown',event=>this.pointerDown(event));this.board.addEventListener('pointermove',event=>this.pointerMove(event));this.board.addEventListener('pointerup',event=>this.pointerUp(event));this.board.addEventListener('pointercancel',()=>{this.drag=null;this.preview=null;this.paint();});
       this.board.addEventListener('wheel',event=>{if(event.ctrlKey||event.metaKey){event.preventDefault();this.zoom(event.deltaY<0?.1:-.1);}},{passive:false});
       this.poll();this.timer=setInterval(()=>this.poll(),2300);
     }
     destroy() {clearInterval(this.timer);clearTimeout(this.draftTimer);if(this.dirty)this.persistDraft();this.destroyed=true;this.root.removeEventListener('click',this.click);this.root.removeEventListener('input',this.input);this.root.removeEventListener('change',this.input);this.root.removeEventListener('submit',this.submit);}
+    updateResearchMode(){
+      const form=this.root.querySelector('#research-setup-form'),automatic=form.elements.auto_discover.checked;
+      form.elements.projects.disabled=automatic;form.elements.projects.required=!automatic;
+      form.elements.projects.closest('.field').hidden=automatic;
+      form.elements.allow_model_context.closest('label').hidden=automatic;
+      this.root.querySelector('#research-future-consent').hidden=!automatic;
+    }
     async poll() {
       if(this.polling||this.destroyed)return;this.polling=true;
       try {
@@ -45,6 +56,11 @@ window.NexusDesigner = (() => {
         if(graphChanged&&!this.dirty&&!this.drag)this.paint();
         const activityStamp=JSON.stringify(data.runs);
         if(activityStamp!==this.activityStamp){this.activityStamp=activityStamp;this.renderActivity();}
+        const autoEdges=data.project.edges.filter(e=>e.research_scope?.auto_discover),activeAuto=autoEdges.some(e=>data.project.active[e.id]);
+        const panel=this.root.querySelector('.designer-discovery');panel.hidden=!autoEdges.length;
+        const discovery=data.discovery||{};
+        this.root.querySelector('#discovery-status').textContent=!activeAuto?'自动接入已暂停 · 启用项目连线后恢复检查':discovery.error?'新项目检查待重试 · '+discovery.error:`自动接入当前及未来项目 · 已发现 ${discovery.projects?.length||0} 个项目${discovery.last_checked?' · 最近检查 '+new Date(discovery.last_checked*1000).toLocaleTimeString():' · 等待首次检查'}`;
+        panel.querySelector('button').disabled=!activeAuto||data.busy;
         this.updateStatus();
       }catch(error){if(!this.remote)this.inspector.innerHTML=`<div class="designer-empty"><h2>暂时无法读取设计器</h2><p>${esc(error.message)}</p><button class="button" data-d="retry">重试</button></div>`;}
       finally{this.polling=false;}
@@ -103,6 +119,7 @@ window.NexusDesigner = (() => {
     }
     onInput(event){
       if(!this.project)return;const target=event.target;
+      if(target.name==='auto_discover'){this.updateResearchMode();return;}
       if(target.id==='designer-provider'){this.provider=target.value;return;}
       if(target.id==='designer-version'){this.selectedVersion=target.value;this.inspect();return;}
       const nodeField=target.dataset.nodeField,edgeField=target.dataset.edgeField;
@@ -121,8 +138,12 @@ window.NexusDesigner = (() => {
           if(this.dirty)await this.save();
           const data=await this.api('/api/designer/research-projects');
           this.root.querySelector('#research-projects').innerHTML=data.projects.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('');
+          const edge=this.project.edges.find(e=>e.id==='orx-project-alpha'),scope=edge?.research_scope,form=this.root.querySelector('#research-setup-form');
+          if(scope){for(const key of ['max_papers','classifier'])form.elements[key].value=scope[key]??form.elements[key].value;form.elements.categories.value=JSON.stringify(scope.categories||[],null,2);for(const key of ['auto_discover','include_user','include_tools','download_pdf','highlight_quotes'])form.elements[key].checked=scope[key]===true;for(const option of form.elements.projects.options)option.selected=scope.project_ids?.includes(option.value);form.elements.schedule.value=edge.schedule||'manual';}
+          form.elements.allow_model_context.checked=false;form.elements.allow_future_model_context.checked=false;this.updateResearchMode();
           this.root.querySelector('#research-setup-dialog').showModal();
         }
+        else if(action==='discover'){await this.api('/api/designer/research-discover',{});this.toast('正在检查新项目并准备独立文件夹…');await this.poll();}
         else if(action==='close-research')this.root.querySelector('#research-setup-dialog').close();
         else if(action==='source-preview'){
           if(this.dirty)await this.save();
@@ -173,8 +194,9 @@ window.NexusDesigner = (() => {
       if(event.target.id==='research-setup-form'){
         event.preventDefault();
         try{
-          const form=new FormData(event.target),options={project_ids:form.getAll('projects'),max_papers:Number(form.get('max_papers')),categories:JSON.parse(form.get('categories')),classifier:form.get('classifier'),include_user:form.has('include_user'),include_tools:form.has('include_tools'),download_pdf:form.has('download_pdf'),highlight_quotes:form.has('highlight_quotes')};
-          await this.api('/api/designer/research-setup',{research_scope:options,schedule:form.get('schedule'),allow_model_context:form.has('allow_model_context')});
+          const form=new FormData(event.target),options={project_ids:form.has('auto_discover')?[]:form.getAll('projects'),max_papers:Number(form.get('max_papers')),categories:JSON.parse(form.get('categories')),classifier:form.get('classifier'),include_user:form.has('include_user'),include_tools:form.has('include_tools'),download_pdf:form.has('download_pdf'),highlight_quotes:form.has('highlight_quotes')};
+          if(form.has('auto_discover'))options.auto_discover=true;
+          await this.api('/api/designer/research-setup',{research_scope:options,schedule:form.get('schedule'),allow_model_context:form.has('allow_model_context'),allow_future_model_context:form.has('allow_future_model_context')});
           this.dirty=false;this.root.querySelector('#research-setup-dialog').close();await this.poll();this.select('edge','orx-project-alpha');this.fit();
           this.toast('两条项目连线已就绪。先预览真实引用，再分别生成、测试并启用。');
         }catch(error){this.toast(error.message,true);}

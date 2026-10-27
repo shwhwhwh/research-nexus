@@ -13,7 +13,7 @@ import requests
 from .domain import BridgeError, Paper, parse_arxiv_atom, parse_arxiv_html, parse_library
 
 
-UA = "ResearchNexus/0.4 (local personal literature archiver)"
+UA = "ResearchNexus/0.5 (local personal literature archiver)"
 
 
 def validate_key(key, service):

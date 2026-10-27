@@ -21,7 +21,7 @@ def serve(root: Path, port=0, *, engine_factory=Engine):
     systems = Systems(root, engine)
     csrf = secrets.token_urlsafe(32)
     class Handler(BaseHTTPRequestHandler):
-        server_version = "ResearchNexus/0.4"
+        server_version = "ResearchNexus/0.5"
 
         def log_message(self, *args):
             pass
@@ -120,6 +120,8 @@ def serve(root: Path, port=0, *, engine_factory=Engine):
                         return self.send(200, designer.research_setup(payload))
                     if action == "research-preview":
                         return self.send(200, designer.research_preview(payload["edge_id"]))
+                    if action == 'research-discover':
+                        return self.send(202, designer.discover_projects())
                     if action == "save":
                         return self.send(200, designer.save_graph(payload))
                     if action == "build":

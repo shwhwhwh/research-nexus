@@ -1,3 +1,11 @@
+# v0.5.0 source build — Automatic project onboarding
+
+- Opt-in discovery of all current and future OpenResearch projects, independent empty folders, and daily incremental citation delivery.
+- Future-project semantic consent is source/provider-bound and distinct from fixed-project grants.
+- Durable completion receipts per destination avoid reprocessing completed citations and continue capped backlogs in later daily batches.
+- Paused destinations receive no onboarding writes. Renames keep folder identity; deleted projects keep their archives.
+- Discovery status and a manual check are available in the DIY designer.
+
 # v0.4.0 source build — DIY Beta
 
 - Visual graph editing, local Codex/Claude declarative plan generation, preview, version-bound activation, repair, rollback and hourly/daily schedules.

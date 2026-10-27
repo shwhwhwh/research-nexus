@@ -12,6 +12,7 @@ import json
 from pathlib import Path
 import re
 import threading
+import time
 from urllib.parse import quote, unquote, urlparse
 import xml.etree.ElementTree as ET
 
@@ -130,10 +131,14 @@ def extract_citations(project, session, payload, options, base):
 def validate_options(options):
     if not isinstance(options, dict):
         raise BridgeError("研究同步配置必须是对象。")
-    if set(options) - {"project_ids", "max_papers", "include_tools", "include_user", "categories", "download_pdf", "highlight_quotes", "classifier"}:
+    if set(options) - {"project_ids", "max_papers", "include_tools", "include_user", "categories", "download_pdf", "highlight_quotes", "classifier", "auto_discover"}:
         raise BridgeError("研究同步包含未知配置。")
     ids = options.get("project_ids", [])
-    if not isinstance(ids, list) or not ids or len(ids) > 60 or any(not isinstance(i, str) or not re.fullmatch(r"[\w-]{1,100}", i) for i in ids):
+    if type(options.get("auto_discover", False)) is not bool:
+        raise BridgeError("自动发现开关须为布尔值。")
+    if options.get("auto_discover") and ids != []:
+        raise BridgeError("自动发现模式不使用固定项目名单。")
+    if not isinstance(ids, list) or (not ids and not options.get("auto_discover")) or len(ids) > 60 or any(not isinstance(i, str) or not re.fullmatch(r"[\w-]{1,100}", i) for i in ids):
         raise BridgeError("请选择明确的 OpenResearch 项目；不默认导出所有项目。")
     if type(options.get("max_papers", 25)) is not int or not 1 <= options.get("max_papers", 25) <= 200:
         raise BridgeError("单次论文数量须为 1–200。")
@@ -164,8 +169,10 @@ class ResearchFlow:
         self.classifier = classifier
         self.state = json.loads(self.path.read_text(encoding="utf-8")) if self.path.exists() else {"keys": {}}
 
-    @staticmethod
-    def consent_id(options):
+    def consent_id(self, options):
+        if options.get("auto_discover"):
+            return fingerprint({"provider": options.get("classifier", "keywords"), "source": self.base(),
+                                "project_scope": "all-current-and-future", "data": "citation_context"})
         return fingerprint({"provider": options.get("classifier", "keywords"), "project_ids": sorted(set(options["project_ids"])), "data": "citation_context"})
 
     def authorized(self, options):
@@ -203,15 +210,121 @@ class ResearchFlow:
             raise BridgeError("无法读取 OpenResearch；请确认本地应用运行、API 地址正确，然后重试。") from None
 
     def projects(self):
-        return [{"id": p["id"], "name": p["name"]} for p in self.get("/api/projects")["projects"]]
+        result = [{"id": p["id"], "name": p["name"]} for p in self.get("/api/projects")["projects"]]
+        if any(not isinstance(p['id'], str) or not re.fullmatch(r'[\w-]{1,100}', p['id']) or
+               not isinstance(p['name'], str) or not p['name'] for p in result) or len({p['id'] for p in result}) != len(result):
+            raise BridgeError("OpenResearch 项目列表格式不正确，未扩大同步范围。")
+        return result
 
-    def collect(self, options):
+    def project_label(self, project):
+        """Keep the original folder name when a project is renamed."""
+        with self.lock:
+            labels = self.state.setdefault('project_labels', {}).setdefault(fingerprint(self.base()), {})
+            pid = project['project_id'] if 'project_id' in project else project['id']
+            name = project.get('project_name', project.get('name', ''))
+            if pid not in labels:
+                label = (name[:65] + ' · ' + pid[:8] + ' · ORX')[:100]
+                if label in labels.values():
+                    label = name[:65] + ' · ' + fingerprint(pid)[:16] + ' · ORX'
+                labels[pid] = label
+                Config._atomic(self.path, self.state)
+            return labels[pid]
+
+    def delivery_scope(self, options, destination):
+        cfg = self.engine.config.snapshot()
+        key_name = 'alphaxiv_key' if destination == 'alpha' else 'zotero_key'
+        return fingerprint([self.base(), destination, cfg.get('zotero_user_id') if destination == 'zotero' else '',
+                            fingerprint(self.engine.config.secret(key_name)),
+                            {k: v for k, v in options.items() if k not in ('project_ids', 'max_papers')}])
+
+    def acknowledge(self, records, options, destination, result, *, failed=False):
+        if not options.get('auto_discover'):
+            return
+        completed = (set() if failed else {r['citation_id'] for r in records} if destination == 'alpha'
+                     else set(result.get('completed_citations', [])))
+        with self.lock:
+            state = self.state.setdefault('deliveries', {}).setdefault(self.delivery_scope(options, destination), {})
+            for row in records:
+                state[row['citation_id']] = {'done': row['citation_id'] in completed, 'attempted': time.time()}
+            Config._atomic(self.path, self.state)
+
+    def ensure_project_roots(self, projects, destination):
+        """Create empty project roots too; cache discoveries, not citation writes."""
+        cfg = self.engine.config.snapshot()
+        scope = fingerprint([self.base(), destination, cfg.get('zotero_user_id', ''),
+                             fingerprint(self.engine.config.secret('alphaxiv_key' if destination == 'alpha' else 'zotero_key'))])
+        with self.lock:
+            roots = self.state.setdefault('project_roots', {}).setdefault(scope, {})
+            pending = [p for p in projects if p['id'] not in roots]
+            if not pending:
+                return 0
+            if destination == 'alpha':
+                client = self.engine.alpha_factory(self.engine.config.secret('alphaxiv_key'))
+                folders, _, _ = parse_library(client.call('list_library', {'include_papers': False}))
+            else:
+                client = self.engine.zotero_factory(cfg['zotero_user_id'], self.engine.config.secret('zotero_key'))
+            created = 0
+            for project in pending:
+                name = self.project_label(project)
+                if destination == 'alpha':
+                    matches = [f for f in folders if f['name'] == name and not f.get('parent_id')]
+                    if len(matches) > 1:
+                        raise BridgeError('项目文件夹存在多个同名目录，请先核对。')
+                    if matches:
+                        key = matches[0]['id']
+                    else:
+                        value = self._payload(client.call('create_folder', {'name': name}))
+                        key = value.get('folder_id') or value.get('id')
+                        if not key:
+                            raise BridgeError('未取得新项目文件夹编号，请重新核对。')
+                        created += 1
+                    # A lost create response is reconciled by name on the next scan.
+                else:
+                    key = client.collection(name)
+                roots[project['id']] = key
+                Config._atomic(self.path, self.state)
+            return created
+
+    def discover(self, scopes):
+        """Scopes and destinations come only from active, validated RN edges."""
+        source = self.base()
+        with self.lock:
+            old = dict(self.state.get('discovery', {}).get(fingerprint(source), {}))
+        status = {**old, 'source': source, 'last_checked': time.time(), 'error': ''}
+        try:
+            for options, _ in scopes:
+                validate_options(options)
+                if not options.get('auto_discover') or not self.authorized(options):
+                    raise BridgeError('自动发现尚未获得当前来源和模型提供商的授权。')
+            projects = self.projects()
+            status['new_projects'] = [p for p in projects if p['id'] not in old.get('known_ids', [])]
+            status['projects'] = projects
+            status['known_ids'] = sorted(set(old.get('known_ids', [])) | {p['id'] for p in projects})
+            status['targets'] = sorted({destination for _, destination in scopes})
+            for destination in status['targets']:
+                self.ensure_project_roots(projects, destination)
+        except Exception as error:
+            status['error'] = self.redact(str(error) if isinstance(error, BridgeError) else '自动发现暂未完成，请稍后重试。')
+        with self.lock:
+            self.state.setdefault('discovery', {})[fingerprint(source)] = status
+            Config._atomic(self.path, self.state)
+        return status
+
+    def discovery_status(self):
+        # Do not wait on the remote folder-creation lock to render the dashboard.
+        try:
+            return dict(self.state.get('discovery', {}).get(fingerprint(self.base()), {})) if self.engine else {}
+        except BridgeError as error:
+            return {'error': self.redact(error)}
+
+    def collect(self, options, destination=None):
         validate_options(options)
         if not self.authorized(options):
             raise BridgeError("尚未授权将所选项目的引用上下文交给此模型服务。请在项目文献向导中明确勾选授权，或选择关键词规则。")
         projects = {p["id"]: p for p in self.projects()}
+        project_ids = list(projects) if options.get('auto_discover') else options['project_ids']
         records, warnings = [], []
-        for pid in options["project_ids"]:
+        for pid in project_ids:
             if pid not in projects:
                 raise BridgeError("所选 OpenResearch 项目已不存在，请重新选择。")
             sessions = self.get("/api/chat/sessions", {"projectId": pid})["sessions"]
@@ -228,9 +341,21 @@ class ResearchFlow:
                 except BridgeError as e:
                     warnings.append(str(e))
         # Cap by paper, keeping all exact citation occurrences of selected papers.
-        identities = list(dict.fromkeys(r["paper_id"] for r in records))
+        total_papers = len({r['paper_id'] for r in records})
+        if options.get('auto_discover') and destination:
+            delivery = self.state.get('deliveries', {}).get(self.delivery_scope(options, destination), {})
+            pending = [r for r in records if not delivery.get(r['citation_id'], {}).get('done')]
+            # Never let completed papers or persistent failures starve new citations.
+            attempts = {}
+            for row in pending:
+                attempts[row['paper_id']] = min(attempts.get(row['paper_id'], float('inf')),
+                                                delivery.get(row['citation_id'], {}).get('attempted', 0))
+            identities = sorted(dict.fromkeys(r['paper_id'] for r in pending), key=lambda pid: attempts[pid])
+        else:
+            identities = list(dict.fromkeys(r["paper_id"] for r in records))
         selected = set(identities[:options.get("max_papers", 25)])
-        records = [r for r in records if r["paper_id"] in selected]
+        records = [r for r in records if r["paper_id"] in selected and
+                   (not options.get('auto_discover') or not destination or not delivery.get(r['citation_id'], {}).get('done'))]
         records = json.loads(self.redact(json.dumps(records, ensure_ascii=False)))
         classifier = options.get("classifier", "keywords")
         if classifier != "keywords" and records:
@@ -252,6 +377,8 @@ class ResearchFlow:
                 row.update(category=cache[token(row)]["category"], category_reason=cache[token(row)]["reason"], classifier=classifier)
         return {"records": records, "papers": len(selected), "citations": len(records),
                 "remaining_papers": max(0, len(identities) - len(selected)), "warnings": warnings,
+                "projects": [projects[pid] for pid in project_ids], "total_papers": total_papers,
+                "auto_discover": options.get('auto_discover', False),
                 "classification": classifier + " · 无法判断时归入待分类", "read_only": True}
 
     def capabilities(self):
@@ -291,6 +418,9 @@ class ResearchFlow:
         if dry_run:
             return {"destination": "alphaXiv", "papers": len({r['paper_id'] for r in records}), "preview": records,
                     "notes": "alphaXiv 无官方笔记/高亮写入接口；请启用配套 Zotero 引用笔记连线。"}
+        if not records:
+            return {'destination': 'alphaXiv', 'verified_memberships': 0, 'created_folders': 0, 'skipped': [],
+                    'note_write_supported': False, 'highlight_write_supported': False}
         with self.lock:
             client = self.engine.alpha_factory(self.engine.config.secret("alphaxiv_key"))
             folders, _, _ = parse_library(client.call("list_library", {"include_papers": False}))
@@ -313,7 +443,7 @@ class ResearchFlow:
                 if not row.get("arxiv"):
                     skipped.append({"paper_id": row["paper_id"], "reason": "alphaXiv 收藏接口仅接受支持的论文标识；DOI 论文交给 Zotero。"})
                     continue
-                root = folder((row["project_name"][:65] + " · " + row["project_id"][:8] + " · ORX")[:100])
+                root = folder(self.project_label(row))
                 child = folder(row["category"], root)
                 for fid in (root, child):
                     token = (fid, row["arxiv"])
@@ -333,6 +463,9 @@ class ResearchFlow:
         if dry_run:
             return {"destination": "Zotero", "papers": len({r['paper_id'] for r in records}), "citation_notes": len(records),
                     "preview": records, "highlight_policy": "仅对 PDF 中逐字核实的引文创建高亮；摘要/上下文只保存为笔记。"}
+        if not records:
+            return {'destination': 'Zotero', 'created_papers': 0, 'created_notes': 0, 'existing_notes': 0,
+                    'created_annotations': 0, 'unlocated_quotes': 0, 'review': [], 'papers': [], 'completed_citations': []}
         with self.lock, self.engine.paper_write_lock:
             cfg = self.engine.config.snapshot()
             client = self.engine.zotero_factory(cfg["zotero_user_id"], self.engine.config.secret("zotero_key"))
@@ -343,6 +476,7 @@ class ResearchFlow:
                 raise BridgeError("无法核对 Zotero 本地文献，未执行写入。")
             report = {"destination": "Zotero", "created_papers": 0, "created_notes": 0, "existing_notes": 0,
                       "created_annotations": 0, "unlocated_quotes": 0, "review": [], "papers": []}
+            report['completed_citations'] = []
             parents, collections = {}, {}
             for row in records:
                 paper = Paper(row["paper_id"], arxiv=row.get("arxiv", ""), version=row.get("version", ""), doi=row.get("doi", ""))
@@ -378,7 +512,7 @@ class ResearchFlow:
                         parents[identity] = item
                 else:
                     item = parents[row["paper_id"]]
-                root_name = (row["project_name"][:65] + " · " + row["project_id"][:8] + " · ORX")[:100]
+                root_name = self.project_label(row)
                 ckey = (row["project_id"], row["category"])
                 if ckey not in collections:
                     parent = client.collection(root_name)
@@ -402,6 +536,7 @@ class ResearchFlow:
                     revision = "RN classification " + fingerprint([row["citation_id"], row["category"], row["classifier"]])
                     client.append_note_metadata(note_key, marker, revision, "当前分类：" + row["category"] + "（" + row["classifier"] + "） · " + row.get("category_reason", ""))
                     client.add_tags({"key": note_key}, [row["category"], "classified:" + row["classifier"]])
+                delivered = True
                 if options.get("download_pdf", False) and paper.arxiv:
                     try:
                         attachment, pdf = self.pdf(client, item, paper, cfg, scope)
@@ -410,8 +545,11 @@ class ResearchFlow:
                             report["created_annotations"] += result[0]; report["unlocated_quotes"] += result[1]
                     except BridgeError as e:
                         report["review"].append({"paper_id": row["paper_id"], "reason": str(e)})
+                        delivered = str(e).startswith('论文已有 PDF 附件')
                 report["papers"].append({"paper_id": row["paper_id"], "item_key": item["key"], "note_key": note_key,
                                           "category": row["category"], "citation_id": row["citation_id"]})
+                if delivered:
+                    report['completed_citations'].append(row['citation_id'])
             return report
 
     def metadata(self, paper):

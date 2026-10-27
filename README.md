@@ -8,7 +8,7 @@
 
 Research Nexus (RN) is a local research workspace and top-level controller. Its first **System Template** connects alphaXiv, Zotero, OpenResearch, and a Google Drive desktop folder. Install the template, connect your own accounts and installed tools, then use the existing system inside RN.
 
-**The v0.4 source build adds a DIY designer (Beta).** Draw a flow, have your local Codex/Claude Code compile a version, preview, activate, and run it. The OpenResearch project-citation route organizes alphaXiv folders and saves source-context notes to Zotero. [DIY guide](docs/DIY.md) · [中文](docs/DIY.zh-CN.md). Autonomous promotion of agent revisions is not enabled. The downloadable v0.3.0 release/demo below covers Template 01.
+**The v0.5 source build adds a DIY designer (Beta).** Draw a flow, have your local Codex/Claude Code compile a version, preview, activate, and run it. Opt-in automatic onboarding covers future OpenResearch projects with source/provider-bound semantic consent and incremental daily delivery. The OpenResearch project-citation route organizes alphaXiv folders and saves source-context notes to Zotero. [DIY guide](docs/DIY.md) · [中文](docs/DIY.zh-CN.md). Autonomous promotion of agent revisions is not enabled. The downloadable v0.3.0 release/demo below covers Template 01.
 
 Created and maintained by **[Rui Li (@shwhwhwh)](https://github.com/shwhwhwh)**. Copyright © 2026 Rui Li. [MIT License](LICENSE); retain its copyright and permission notice when redistributing.
 

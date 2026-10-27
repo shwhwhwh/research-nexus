@@ -77,6 +77,7 @@ class Designer:
         self.lock = threading.RLock()
         self.stop_event = threading.Event()
         self.processes, self.workers, self.agent_cache = {}, set(), None
+        self.next_discovery = time.monotonic() + 5
         self.project = self._read(self.base / "project.json", None) or self.default_project()
         self.runs = self._read(self.base / "runs.json", [])
         for run in self.runs:
@@ -113,7 +114,8 @@ class Designer:
             return {"project": copy.deepcopy(self.project), "runs": copy.deepcopy(self.runs[-30:][::-1]),
                     "versions": copy.deepcopy([{**r, "current_contract": r.get("contract") == contracts.get(r["edge_id"])}
                                                for r in reversed(self.runs) if r.get("kind") == "build" and r.get("plan")]),
-                    "agents": self.agents(), "busy": bool(self.workers), "ops": OPS}
+                    "agents": self.agents(), "busy": bool(self.workers), "ops": OPS,
+                    "discovery": self.research.discovery_status()}
 
     def save_graph(self, data):
         with self.lock:
@@ -195,12 +197,14 @@ class Designer:
         scope = payload.get("research_scope", {})
         validate_options(scope)
         known = {p["id"] for p in self.research.projects()}
-        if not set(scope["project_ids"]) <= known:
+        if not scope.get('auto_discover') and not set(scope["project_ids"]) <= known:
             raise BridgeError("项目已不存在，请重新选择。")
         with self.lock:
             if scope.get("classifier", "keywords") != "keywords" and not self.research.authorized(scope):
-                if payload.get("allow_model_context") is not True:
-                    raise BridgeError("请明确勾选允许将所选项目的引用上下文交给所选模型服务，或选择关键词分类。")
+                consent_field = 'allow_future_model_context' if scope.get('auto_discover') else 'allow_model_context'
+                if payload.get(consent_field) is not True:
+                    raise BridgeError("请明确授权当前及未来项目的模型分类。" if scope.get('auto_discover') else
+                                      "请明确勾选允许将所选项目的引用上下文交给所选模型服务，或选择关键词分类。")
                 self.research.authorize(scope)
             graph = copy.deepcopy(self.project)
             for target, suffix, purpose in [
@@ -227,6 +231,42 @@ class Designer:
         if "research_scope" not in spec:
             raise BridgeError("请先为连线选择项目范围。")
         return self.research.collect(spec["research_scope"])
+
+    def discover_projects(self):
+        with self.lock:
+            if self.workers:
+                raise BridgeError('请先等待当前数据流任务完成。')
+            scopes = []
+            for edge in self.project['edges']:
+                active = self.project['active'].get(edge['id'])
+                if not active or active['contract'] != self.contract(edge['id']) or not edge.get('research_scope', {}).get('auto_discover'):
+                    continue
+                spec = self.specification(edge['id'])
+                self.validate_plan(self.version(edge['id'], active['version'])['plan'], spec)
+                if not self.research.authorized(spec['research_scope']):
+                    raise BridgeError('当前来源和模型尚未获得未来项目授权，请回项目向导确认。')
+                scopes.append((copy.deepcopy(spec['research_scope']), 'alpha' if spec['target']['builtin'] == 'alpha' else 'zotero'))
+            if not scopes:
+                raise BridgeError('请先启用自动发现模式的项目文献连线。')
+            self.next_discovery = time.monotonic() + 60
+            self.workers.add('project-discovery')
+            def work():
+                try:
+                    previous = self.research.discovery_status()
+                    status = self.research.discover(scopes)
+                    if status.get('new_projects') or status.get('error') != previous.get('error', ''):
+                        with self.lock:
+                            event = self._new_run('project-discovery', 'discovery')
+                            event.update(status='error' if status.get('error') else 'success', finished=now(),
+                                         result={'project_count': len(status.get('projects', [])), 'new_projects': status.get('new_projects', [])})
+                            if status.get('error'):
+                                event['error'] = status['error']
+                finally:
+                    with self.lock:
+                        self.workers.discard('project-discovery')
+                        self._save()
+            threading.Thread(target=work, daemon=True).start()
+            return {'queued': True}
 
     def classify_citations(self, rows, options):
         if not self.research.authorized(options):
@@ -384,7 +424,7 @@ class Designer:
             self.command(provider)
             if not self.edge(edge_id).get("purpose", "").strip():
                 raise BridgeError("先写清楚这条连线要做什么。")
-            if edge_id in self.workers or "graph" in self.workers:
+            if edge_id in self.workers or "graph" in self.workers or 'project-discovery' in self.workers:
                 raise BridgeError("这条连线已有任务。")
             spec, contract = self.specification(edge_id), self.contract(edge_id)
             previous = next((r for r in reversed(self.runs) if r["edge_id"] == edge_id and r.get("error")), None)
@@ -407,7 +447,7 @@ map {fields:{outputField:"input.dotted.path"}} (prefix = for literal strings);
 filter {field,operator:"exists|equals|contains",value?}; dedupe {key};
 write_json {filename:"result.json"}; write_markdown {filename:"result.md",template:"{{title}}"};
 builtin_archive {} only for the existing alphaXiv -> Zotero archive.
-orx_citations {} reads completed selected-branch OpenResearch messages via its official local API, extracts explicit arXiv/DOI citations and optional completed tool-output discoveries, and classifies with the research_scope keyword categories. Project IDs and limits are enforced by RN from research_scope; use empty settings, never override scope.
+orx_citations {} reads completed selected-branch OpenResearch messages via its official local API, extracts explicit arXiv/DOI citations and optional completed tool-output discoveries, and classifies with the configured keyword/model provider. Scope and limits are enforced by RN; use empty settings, never override scope. When research_scope.auto_discover is true, an empty project_ids list means the explicitly authorized current AND future projects; RN resolves them at runtime, creates empty project folders, and delivers new/unfinished citations incrementally. No per-project rebuilding or extra user setup is required in that mode.
 alpha_project_library {} saves the orx_citations records in alphaXiv project folders and category subfolders. Idempotent official MCP; arXiv only. No note/highlight writes are available in alphaXiv's current official MCP. Do not invent a write-note endpoint.
 zotero_project_notes {} saves the orx_citations records to Zotero project collections/category subcollections, exact source-context child notes with immutable IDs, additive citation tags, optional linked PDF and highlights ONLY when verbatim quotes are actually located in that PDF. DOI metadata uses Crossref. All writes reconcile client keys and existing identifiers.
 For OpenResearch -> alphaXiv or Zotero with research_scope supplied, emit exactly orx_citations then the matching alpha_project_library or zotero_project_notes, both with settings "{}". These are implemented RN operations and use the already configured local account keys. Set ready, empty requirements; describe limitations accurately. No HTTP or staging workaround is needed for this supported route.
@@ -561,24 +601,45 @@ Integration specification follows:\n""" + json.dumps(spec, ensure_ascii=False)
 
     def execute_plan(self, plan, spec, edge_id, data, *, dry_run=True, run=None):
         self.validate_plan(plan, spec)
-        artifacts, steps, source_report = [], [], None
+        artifacts, steps, source_report, citation_records, source_projects = [], [], None, [], []
         for index, step in enumerate(plan["steps"]):
             if self.stop_event.is_set() or run and run["status"] == "cancelled":
                 raise BridgeError("任务已停止。")
             op, options = step["op"], json.loads(step["settings"])
             if op == "orx_citations":
                 if not dry_run:
-                    collected = self.research.collect(spec["research_scope"])
+                    destination = 'alpha' if spec['target'].get('builtin') == 'alpha' else 'zotero'
+                    collected = self.research.collect(spec["research_scope"], destination=destination)
                     data = collected["records"]
+                    citation_records, source_projects = data, collected['projects']
                     source_report = {k: v for k, v in collected.items() if k != "records"}
                     if run:
                         self._log(run, f"已读取 {collected['papers']} 篇论文、{collected['citations']} 处引用；" + "；".join(collected["warnings"]))
                         if collected["remaining_papers"]:
-                            self._log(run, f"还有 {collected['remaining_papers']} 篇超出当前数量上限；请在范围设置中调整上限后重新生成版本。")
+                            self._log(run, f"还有 {collected['remaining_papers']} 篇等待后续批次。" if spec['research_scope'].get('auto_discover') else
+                                      f"还有 {collected['remaining_papers']} 篇超出当前数量上限；请在范围设置中调整上限后重新生成版本。")
             elif op == "alpha_project_library":
-                data = self.research.alpha_sync(data, dry_run=dry_run)
+                if not dry_run and spec['research_scope'].get('auto_discover'):
+                    self.research.ensure_project_roots(source_projects, 'alpha')
+                try:
+                    data = self.research.alpha_sync(data, dry_run=dry_run)
+                except Exception:
+                    if not dry_run:
+                        self.research.acknowledge(citation_records, spec['research_scope'], 'alpha', {}, failed=True)
+                    raise
+                if not dry_run:
+                    self.research.acknowledge(citation_records, spec['research_scope'], 'alpha', data)
             elif op == "zotero_project_notes":
-                data = self.research.zotero_sync(data, spec["research_scope"], dry_run=dry_run)
+                if not dry_run and spec['research_scope'].get('auto_discover'):
+                    self.research.ensure_project_roots(source_projects, 'zotero')
+                try:
+                    data = self.research.zotero_sync(data, spec["research_scope"], dry_run=dry_run)
+                except Exception:
+                    if not dry_run:
+                        self.research.acknowledge(citation_records, spec['research_scope'], 'zotero', {}, failed=True)
+                    raise
+                if not dry_run:
+                    self.research.acknowledge(citation_records, spec['research_scope'], 'zotero', data)
             elif op == "select":
                 data = field(data, options.get("path", "$"))
             elif op == "map":
@@ -660,7 +721,7 @@ Integration specification follows:\n""" + json.dumps(spec, ensure_ascii=False)
     def run(self, edge_id, version=None, dry_run=True, input_data=None):
         with self.lock:
             edge = self.edge(edge_id)
-            if edge_id in self.workers or "graph" in self.workers:
+            if edge_id in self.workers or "graph" in self.workers or 'project-discovery' in self.workers:
                 raise BridgeError("这条连线已有任务正在运行。")
             if edge.get("builtin"):
                 plan = {"summary": "现有收藏归档", "notes": "复用原引擎", "steps": [{"op": "builtin_archive", "settings": "{}"}]}
@@ -747,6 +808,14 @@ Integration specification follows:\n""" + json.dumps(spec, ensure_ascii=False)
         with self.lock:
             if self.workers or self.stop_event.is_set():
                 return
+            if time.monotonic() >= self.next_discovery:
+                self.next_discovery = time.monotonic() + 60
+                if any(e.get('research_scope', {}).get('auto_discover') and e['id'] in self.project['active'] for e in self.project['edges']):
+                    try:
+                        self.discover_projects()
+                    except BridgeError:
+                        pass
+                    return
             for edge in self.project["edges"]:
                 interval = {"hourly": 3600, "daily": 86400}.get(edge.get("schedule"))
                 if interval and not edge.get("builtin") and edge["id"] in self.project["active"] and time.time() - self.project["last_run"].get(edge["id"], 0) >= interval:

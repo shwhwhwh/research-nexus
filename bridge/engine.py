@@ -55,7 +55,7 @@ class Engine:
     def status(self):
         jobs = self.store.jobs(self.scope())
         counts = Counter(j["status"] for j in jobs)
-        return {"name": "Research Nexus", "version": "0.4.0", "busy": self.busy,
+        return {"name": "Research Nexus", "version": "0.5.0", "busy": self.busy,
                 "operation": self.operation, "config": self.config.public(), "missing": self.missing(),
                 "counts": dict(counts), "jobs": jobs, "folders": self.store.meta("folders") or [],
                 "warnings": self.store.meta("warnings") or [], "last_sync": self.store.meta("last_sync"),

@@ -24,3 +24,7 @@ body.workspace-fullscreen.designer-open #main{margin:0;padding:0;height:100vh}
 @keyframes flow-pulse{50%{opacity:.35}}@media(max-width:1200px){.designer-header{padding:20px}.designer-header h1{font-size:20px}.designer-header-actions{max-width:225px}.designer-grid{grid-template-columns:minmax(280px,1fr) 290px}.inspector-body{padding:16px}.board-help{max-width:85%;font-size:11px}.designer-activity{grid-template-columns:160px 1fr}}@media(prefers-reduced-motion:reduce){.activity-status{animation:none!important}}
 
 .research-option{display:flex;gap:9px;align-items:flex-start;margin:12px 0;font-size:14px;line-height:1.6}.research-option input{width:auto;margin-top:5px;flex:none}.research-scope{padding:12px 0 18px;border-bottom:1px solid var(--border);margin-bottom:16px}.research-scope textarea{width:100%;font-size:13px;line-height:1.6;margin:10px 0}.research-scope .button{margin-top:12px}#research-setup-dialog select[multiple]{min-height:140px}#research-setup-dialog small{display:block;color:var(--muted);line-height:1.6}
+.designer-discovery{display:flex;gap:16px;align-items:center;justify-content:space-between;padding:10px 22px;border-bottom:1px solid var(--border);font-size:13px}.designer-discovery[hidden],.research-option[hidden]{display:none}
+
+#research-setup-dialog{max-height:calc(100vh - 64px);overflow:auto}
+.designer-dialog .field[hidden]{display:none}

@@ -83,7 +83,13 @@ app.whenReady().then(async()=>{
   await click('[data-tool=openresearch]');await caption('Continue in OpenResearch, in the same RN workspace.','手动把选中的论文链接 / PDF 交给研究对话，使用自己的 Agent。');await hold(3);await shot('06-openresearch');
   await click('[data-page=systems]');await until(()=>wc.executeJavaScript('!!document.querySelector(".system-map")'),'System overview not restored');
   await caption('Start with a template. Extend it in the DIY designer.','先使用系统模板，再通过 DIY 设计器扩展数据流。');await hold(2.5);
-  if(testOnly){await click('[data-page=designer]');await until(()=>wc.executeJavaScript('!!document.querySelector(".flow-canvas")'),'DIY canvas missing');await delay(350);await shot('08-diy-canvas');}
+  if(testOnly){
+    await click('[data-page=designer]');await until(()=>wc.executeJavaScript('!!document.querySelector(".flow-canvas")'),'DIY canvas missing');await delay(350);await shot('08-diy-canvas');
+    const controls=await wc.executeJavaScript(`(()=>{const d=document.querySelector('#research-setup-dialog'),f=d.querySelector('form');d.showModal();f.elements.auto_discover.checked=true;f.elements.auto_discover.dispatchEvent(new Event('change',{bubbles:true}));f.elements.classifier.value='codex';return{projectsDisabled:f.elements.projects.disabled,projectsNotRequired:!f.elements.projects.required,futureConsentVisible:!document.querySelector('#research-future-consent').hidden,futureConsentUnchecked:!f.elements.allow_future_model_context.checked};})()`);
+    assert.deepEqual(controls,{projectsDisabled:true,projectsNotRequired:true,futureConsentVisible:true,futureConsentUnchecked:true});
+    await delay(350);await shot('09-project-onboarding');
+    assert.equal(await wc.executeJavaScript(`(()=>{const d=document.querySelector('#research-setup-dialog'),f=d.querySelector('form');f.elements.auto_discover.checked=false;f.elements.auto_discover.dispatchEvent(new Event('change',{bubbles:true}));const valid=!f.elements.projects.disabled&&f.elements.projects.required&&document.querySelector('#research-future-consent').hidden;d.close();return valid;})()`),true);
+  }
   const rejected=await fetch(address+'/api/designer/build',{method:'POST',headers:{Origin:address,'Content-Type':'application/json','X-CSRF-Token':csrf},body:'{}'});assert.equal(rejected.status,400);
   if(testOnly){await click('[data-page=systems]');await until(()=>wc.executeJavaScript('!!document.querySelector(".system-map")'),'System page missing');}
   nativeTheme.themeSource='dark';await delay(450);await hold(.5);await shot('07-dark');
