@@ -82,7 +82,7 @@ internal sealed class DockHost : Form {
     IntPtr bridgeHandle, lastForeground;
     int bridgePid;
     Rectangle viewport;
-    bool bridgeVisible, hotkeys, quitting;
+    bool bridgeVisible, hotkeys, quitting, detaching;
     string active;
     NotifyIcon orxTray;
     Form standalone;
@@ -167,7 +167,7 @@ internal sealed class DockHost : Form {
             }
         } catch {} finally {
             var output=writer;
-            try { BeginInvoke((Action)(()=> { if(bridge==output) DetachBridge(); })); } catch {}
+            try { BeginInvoke((Action)(()=> { if(bridge==output)TryDetachBridge(); })); } catch {}
             pipe.Dispose();
         }
     }
@@ -220,7 +220,7 @@ internal sealed class DockHost : Form {
                 }
                 Event("released",tool);Reply(writer,id,new {ok=true});return;
             }
-            if(command=="detach") { DetachBridge();Reply(writer,id,new {ok=true});return; }
+            if(command=="detach") { DetachBridge();Reply(writer,id,new {ok=true,detached=true});return; }
             throw new Exception("未知本地窗口操作。");
         } catch(Exception e) { Send(writer,new {id=id,error=e.Message}); }
     }
@@ -304,6 +304,7 @@ internal sealed class DockHost : Form {
     }
     void Hide(ToolWindow state) { if(state.Shown&&Native.IsWindow(state.Handle))Native.ShowWindow(state.Handle,0);state.Shown=false; }
     void LayoutTools(bool raise) {
+        if(detaching)return;
         foreach(var state in tools.Values) {
             if(!Native.IsWindow(state.Handle))continue;
             if(standaloneMode&&state.Tool=="openresearch") {
@@ -322,16 +323,31 @@ internal sealed class DockHost : Form {
         Native.SetLong(state.Handle,-16,new IntPtr(state.Style));Native.SetLong(state.Handle,-20,new IntPtr(state.ExStyle));
         var r=state.Original;
         Native.SetWindowPos(state.Handle,IntPtr.Zero,r.X,r.Y,Math.Max(100,r.Width),Math.Max(100,r.Height),0x0034);
+        // Never acknowledge detach while a live external window is still a child.
+        long parentStyles=unchecked((long)0xC0000000);
+        if(!Native.IsWindow(state.Handle)||Native.GetParent(state.Handle)!=state.Parent||
+            (Native.GetLong(state.Handle,-16).ToInt64()&parentStyles)!=(state.Style&parentStyles))
+            throw new Exception("本地应用窗口未能安全恢复，请保持 Research Nexus 运行并重试。");
         Native.ShowWindow(state.Handle,visible?4:0);state.Modified=false;state.Shown=visible;state.Docked=false;state.Last=Rectangle.Empty;
     }
     void DetachBridge() {
-        bridge=null;bridgeHandle=IntPtr.Zero;bridgePid=0;bridgeVisible=false;active="";
-        foreach(var t in tools.Values.ToList()) {
-            if(t.Tool=="openresearch") { Restore(t,false); }
-            else { Restore(t,false);tools.Remove(t.Tool); }
+        if(detaching)throw new Exception("本地窗口正在释放，请稍后重试。");
+        detaching=true;
+        // Keep ownership and the recovery journal until every restore succeeds.
+        // SetParent/ShowWindow may pump messages across processes. Suspend layout
+        // and cancel pending opens so none can reparent a window during restore.
+        try {
+            foreach(var p in pending.Where(p=>p.Writer==bridge).ToList()) {
+                pending.Remove(p);Send(p.Writer,new {id=p.Id,error="工作台正在退出，已取消打开本地应用。"});
+            }
+            foreach(var t in tools.Values.ToList())Restore(t,false);
+            foreach(var t in tools.Values.ToList())if(t.Tool!="openresearch")tools.Remove(t.Tool);
+            bridge=null;bridgeHandle=IntPtr.Zero;bridgePid=0;bridgeVisible=false;active="";
+            standaloneMode=false;if(standalone!=null)standalone.Hide();SetHotkeys(false);
         }
-        standaloneMode=false;if(standalone!=null)standalone.Hide();SaveJournal();SetHotkeys(false);
+        finally {SaveJournal();detaching=false;}
     }
+    void TryDetachBridge() { try { DetachBridge(); } catch { SaveJournal(); } }
     void CreateOrxTray() {
         if(orxTray!=null)return;
         var menu=new ContextMenuStrip();
@@ -360,12 +376,13 @@ internal sealed class DockHost : Form {
         standaloneMode=true;t.Docked=false;standalone.Show();standalone.Activate();LayoutTools(true);
     }
     void TickWindows() {
+        if(detaching)return;
         foreach(var p in pending.ToList()) {
             var tool=Find(p.Tool);
             if(tool!=null) { pending.Remove(p);Open(tool);Reply(p.Writer,p.Id,new {ok=true,tool=p.Tool,pid=tool.Pid,hwnd=tool.Handle.ToInt64().ToString(),native=true}); }
             else if(DateTime.Now>p.Until) { pending.Remove(p);Send(p.Writer,new {id=p.Id,error="本地应用窗口尚未就绪，请重试。"}); }
         }
-        if(bridge!=null&&(!Native.IsWindow(bridgeHandle)||!SameExe(bridgePid,Path.Combine(root,"node_modules","electron","dist","electron.exe"))))DetachBridge();
+        if(bridge!=null&&(!Native.IsWindow(bridgeHandle)||!SameExe(bridgePid,Path.Combine(root,"node_modules","electron","dist","electron.exe"))))TryDetachBridge();
         foreach(var t in tools.Values.ToList()) if(!Native.IsWindow(t.Handle)||Native.Pid(t.Handle)!=t.Pid) {
             tools.Remove(t.Tool);Event("closed",t.Tool);SaveJournal();
             if(t.Tool=="openresearch"&&orxTray!=null) {orxTray.Dispose();orxTray=null;if(standalone!=null)standalone.Hide();}

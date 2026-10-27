@@ -78,11 +78,14 @@ Detailed guide: [English](docs/SYSTEM_TEMPLATE.md) · [中文](docs/SYSTEM_TEMPL
 ```powershell
 npm run check
 npm test
+npm run test:desktop
 npm run test:systems
 npm run test:alpha
 ```
 
 Tests use isolated fixture storage. The system UI test downloads/imports the template, completes dummy setup, archives two fictional papers with the real engine, checks repeat deduplication, and verifies that DIY execution is disabled. No real accounts or tools are opened. Optional [CI template](docs/ci/check.yml) requires repository workflow permission to enable.
+
+Desktop lifecycle tests cover delayed/failed native detach and repeated quit requests. RN waits for the native host to verify that external windows have been restored before it exits; a failed detach keeps RN running for a retry. For an opt-in check with your installed applications, start RN with `--verify-native-tools` (add `--quit-after-native-check` for an exit/reopen check). This opens the real application windows and records only window identity and geometry under ignored `data/`, without capturing their content.
 
 [Roadmap](docs/ROADMAP.md) · [Architecture](docs/architecture.md) · [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md) · [Third-party notices](THIRD_PARTY_NOTICES.md)
 

@@ -76,11 +76,14 @@ npm start
 ```powershell
 npm run check
 npm test
+npm run test:desktop
 npm run test:systems
 npm run test:alpha
 ```
 
 模板界面测试使用独立数据，验证导出导入、首次配置、真实归档引擎、重复运行及 DIY 未开放状态，不访问真实账号。仓库保留可选 [CI 模板](docs/ci/check.yml)，启用需要 GitHub 工作流权限。
+
+桌面生命周期测试覆盖窗口释放延迟、失败和连续退出。RN 必须收到原生组件确认窗口已安全恢复后才退出，释放失败时保持运行以便重试。需要核对本机真实窗口时，可用 `--verify-native-tools` 启动 RN；增加 `--quit-after-native-check` 可验证退出后重新打开。此检查会打开已安装的工具，仅在被忽略的 `data/` 中记录窗口身份和尺寸，不录制应用内容。
 
 [路线图](docs/ROADMAP.md) · [架构](docs/architecture.md) · [贡献指南](CONTRIBUTING.md) · [安全说明](SECURITY.md) · [第三方组件](THIRD_PARTY_NOTICES.md)
 

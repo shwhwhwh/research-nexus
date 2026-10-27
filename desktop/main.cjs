@@ -15,6 +15,11 @@ nativeTheme.themeSource=themeSource;
 const appearance=()=>({source:themeSource,dark:nativeTheme.shouldUseDarkColors});
 let win, backend, origin, activeTool, backendLog, trayIcon, trayMenu;
 let shuttingDown = false, serverCSRF = '';
+const createQuitGuard=require('./quit-guard.cjs');
+const quitGuard=createQuitGuard({cleanup:shutdown,quit:()=>app.quit(),onStart:()=>{shuttingDown=true;},onError:error=>{
+  shuttingDown=false;
+  dialog.showErrorBox('暂未退出 Research Nexus',error.message+'\n为保护 Zotero 和 OpenResearch 窗口，工作台仍在运行。请稍后从托盘重试退出。');
+}});
 let nativeApps, webTools;
 let workspaceReady=false, openResearchRequested=process.argv.includes('--open-openresearch');
 let designerRequested=process.argv.includes('--open-designer');
@@ -49,8 +54,8 @@ else {
     fs.mkdirSync(path.join(root, 'data'), { recursive: true });
     fs.writeFileSync(path.join(root, 'data', 'startup-error.txt'), String(e));
     if (!smoke) dialog.showErrorBox('Research Nexus 启动失败', String(e));
-    await nativeApps?.detach().catch(()=>{});
-    app.exit(1);
+    try {await nativeApps?.detach();app.exit(1);}
+    catch(error) {dialog.showErrorBox('本地窗口尚未释放',error.message);}
   });
 }
 
@@ -96,6 +101,7 @@ function layout() {
   nativeApps?.layout(screen.dipToScreenRect(win,{x:content.x+x,y:content.y+y,width:Math.max(1,width-x),height:Math.max(1,height-y)}),isNativeTool(activeTool)?activeTool:'',win.isVisible()&&!win.isMinimized());
 }
 async function showNativeTool(tool, itemKey) {
+  if(shuttingDown)throw new Error('正在安全退出 Research Nexus，请稍后重新打开工具。');
   if(!isNativeTool(tool))throw new Error('不支持的本地应用。');
   void webTools?.checkpoint();
   await nativeApps.connect();activeTool=tool;layout();
@@ -195,7 +201,7 @@ async function start() {
   win.once('ready-to-show',()=>{if(!smoke && win && !win.isDestroyed())win.show();});
   if (!smoke || smokeTray) createTray();
   win.on('close',event=>{
-    if (!shuttingDown && trayIcon && !trayIcon.isDestroyed()) {
+    if (!quitGuard.allowed && (quitGuard.busy || (trayIcon && !trayIcon.isDestroyed()))) {
       event.preventDefault();
       void webTools.checkpoint();
       win.hide();
@@ -300,6 +306,10 @@ async function start() {
     catch(e) {activeTool=null;layout();win.webContents.send('native-tool-state',{event:'error',tool:'openresearch',message:e.message});}
   }
   if (!smoke) { try { fs.unlinkSync(path.join(root,'data','startup-error.txt')); } catch {} }
+  if(process.argv.includes('--verify-native-tools')) {
+    await require('./verify-native-tools.cjs')({root,win,nativeApps,showNativeTool,layout});
+    if(process.argv.includes('--quit-after-native-check'))app.quit();
+  }
   if (smoke) {
     await win.webContents.executeJavaScript(`new Promise((resolve,reject)=>{const started=Date.now();const check=()=>{if(document.querySelector('main h1'))resolve(true);else if(Date.now()-started>10000)reject(new Error('Dashboard did not render'));else setTimeout(check,50)};check()})`);
     const state=await win.webContents.executeJavaScript('document.title');
@@ -393,12 +403,11 @@ async function start() {
   }
 }
 app.on('window-all-closed',()=>{if(!trayIcon || trayIcon.isDestroyed() || shuttingDown)app.quit();});
-app.on('before-quit',event=>{
-  if(shuttingDown)return;
-  event.preventDefault();shuttingDown=true;
-  (async()=>{
-    await webTools?.checkpoint();webTools?.stop();
+app.on('before-quit',event=>quitGuard.handle(event));
+async function shutdown() {
+    await webTools?.checkpoint();
     await nativeApps?.detach();
+    webTools?.stop();
     if(backend && origin && serverCSRF) {
       try {await fetch(origin+'/api/shutdown',{method:'POST',headers:{Origin:origin,'Content-Type':'application/json','X-CSRF-Token':serverCSRF},body:'{}',signal:AbortSignal.timeout(3000)});}catch{}
       if(backend && backend.exitCode===null) await Promise.race([new Promise(resolve=>backend.once('exit',resolve)),new Promise(resolve=>setTimeout(resolve,3500))]);
@@ -406,6 +415,4 @@ app.on('before-quit',event=>{
     if(backend && backend.exitCode===null)backend.kill();
     if(backendLog!==undefined) {try {fs.closeSync(backendLog);}catch{}}
     if(trayIcon && !trayIcon.isDestroyed())trayIcon.destroy();
-    app.quit();
-  })();
-});
+}

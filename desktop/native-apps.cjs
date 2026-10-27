@@ -9,6 +9,7 @@ module.exports = class NativeApps extends EventEmitter {
   constructor(root, window) {
     super(); this.root=root; this.window=window; this.sequence=0; this.pending=new Map();
     this.executable=path.join(root,'desktop','NativeDockHost.exe');
+    this.requiresDetach=false;
     this.pipe='\\\\.\\pipe\\ResearchBridge.NativeDock.'+createHash('sha256').update(root.toLowerCase()).digest('hex').slice(0,16);
   }
   async connect() {
@@ -45,6 +46,7 @@ module.exports = class NativeApps extends EventEmitter {
             this.pending.clear();
           });
           const handle=this.window.getNativeWindowHandle();
+          this.requiresDetach=true;
           await this.request('attach',{hwnd:handle.readBigUInt64LE().toString(),pid:process.pid});
           return;
         }
@@ -60,6 +62,7 @@ module.exports = class NativeApps extends EventEmitter {
   }
   request(command,values={}) {
     return new Promise((resolve,reject)=>{
+      if(!this.socket?.writable) {reject(new Error('本地窗口连接已断开。'));return;}
       const id=++this.sequence;
       const timer=setTimeout(()=>{this.pending.delete(id);reject(new Error('本地应用响应超时，请重试。'));},30000);
       this.pending.set(id,{resolve,reject,timer});
@@ -73,9 +76,13 @@ module.exports = class NativeApps extends EventEmitter {
   async release(tool) {if(this.socket?.writable)return this.request('release',{tool});}
   async status() {await this.connect();return this.request('status');}
   async detach() {
-    if(this.socket?.writable) {
-      await Promise.race([this.request('detach'),new Promise(resolve=>setTimeout(resolve,1000))]).catch(()=>{});
-      this.socket.end();
-    }
+    if(!this.requiresDetach)return;
+    // A timeout or a lost pipe cannot prove cross-process children are safe.
+    // Reconnect to the same host and require its verified restore acknowledgement.
+    await this.connect();
+    const result=await this.request('detach');
+    if(result?.detached!==true)throw new Error('未能确认本地应用窗口已安全释放；Research Nexus 将保持运行，请重试退出。');
+    this.requiresDetach=false;
+    this.socket.end();
   }
 };
