@@ -2,7 +2,7 @@
 
 Research Nexus is maintained by Rui Li (@shwhwhwh). Issues and pull requests are welcome. Describe the problem, expected data flow, supported API, and a small **fictional** fixture. Preserve the MIT copyright notice and document third-party dependencies.
 
-Before submitting, run `npm run check`, `npm test`, and, for template UI changes, `npm run test:systems`. Describe what was verified and any external service that could not be tested. Keep the archive pipeline backward compatible. DIY connector work is unfinished and remains experimental. Future connectors should specify origins, credentials by variable name, sample inputs, duplicate handling, and failure recovery.
+Before submitting, run `npm run check`, `npm test`, and, for template UI changes, `npm run test:systems`. Describe what was verified and any external service that could not be tested. Keep the archive pipeline backward compatible. The DIY designer is Beta; maintain its version/activation, provenance, idempotency and model-consent boundaries. Future connectors should specify origins, credentials by variable name, sample inputs, duplicate handling, and failure recovery.
 
 Never include `data/`, real papers, conversations, browser profiles, tokens, personal account IDs, local absolute paths, or screenshots of a personal workspace. Tests must use isolated storage and must not access the contributor's real tools or libraries. Propose changes via a pull request; do not enable new live writes or schedules in tests.
 

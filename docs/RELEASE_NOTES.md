@@ -1,3 +1,13 @@
+# v0.4.0 source build — DIY Beta
+
+- Visual graph editing, local Codex/Claude declarative plan generation, preview, version-bound activation, repair, rollback and hourly/daily schedules.
+- Scoped OpenResearch project references → alphaXiv project/category folders, plus Zotero citation-context notes, source IDs, citation tags and linked PDFs.
+- PDF highlights require unique verbatim source matches. Unsupported alphaXiv note/highlight writes use the Zotero route.
+- Optional semantic classification requires provider/project-bound consent and caches validated decisions. Keyword classification stays local.
+- Real RN acceptance testing covers two selected-project papers and repeated-run identity checks. Public tests and screenshots use fictional data.
+
+The release/demo below documents the previous stable template-only build.
+
 # Research Nexus v0.3.0 — System Template 01
 
 Created and maintained by Rui Li (@shwhwhwh). Copyright © 2026 Rui Li, MIT licensed.

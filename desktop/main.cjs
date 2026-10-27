@@ -310,6 +310,10 @@ async function start() {
     await require('./verify-native-tools.cjs')({root,win,nativeApps,showNativeTool,layout});
     if(process.argv.includes('--quit-after-native-check'))app.quit();
   }
+  if(process.argv.includes('--verify-diy-live')) {
+    try {await require('./verify-diy-live.cjs')({root,win,origin});}
+    catch(e){dialog.showErrorBox('DIY 实际测试未完成',e.message);}
+  }
   if (smoke) {
     await win.webContents.executeJavaScript(`new Promise((resolve,reject)=>{const started=Date.now();const check=()=>{if(document.querySelector('main h1'))resolve(true);else if(Date.now()-started>10000)reject(new Error('Dashboard did not render'));else setTimeout(check,50)};check()})`);
     const state=await win.webContents.executeJavaScript('document.title');

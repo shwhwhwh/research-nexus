@@ -14,6 +14,9 @@ window.NexusDesigner = (() => {
         <aside class="designer-inspector" aria-label="工具与数据流设置"></aside><section class="designer-activity hidden"></section></div><dialog class="designer-dialog"><form id="designer-add-form"><div class="designer-dialog-head"><h2>添加科研工具</h2><button class="icon-button" type="button" data-d="close-dialog">✕</button></div><p>添加常用网页、API、本地应用或输出目录，然后在画布中连接它。</p><div class="field"><label>名称</label><input name="name" required maxlength="80" placeholder="例如：Semantic Scholar、Obsidian"></div><div class="field"><label>类型</label><select name="kind"><option value="website">网页 / API</option><option value="app">本地应用</option><option value="folder">本地输出目录</option></select></div><div class="field"><label>网页或 API 地址（可选）</label><input name="url" placeholder="https://…"></div><div class="field"><label>API 基础地址（可选）</label><input name="api_url" placeholder="网页与 API 地址不同时填写"></div><div class="field"><label>授权变量名（可选，不填密钥）</label><input name="credential_env" placeholder="例如 NEXUS_MYTOOL_KEY"></div><div class="field"><label>本地程序（应用类型必填）</label><div class="designer-inline"><input name="executable" readonly placeholder="选择已安装的 .exe 程序"><button type="button" class="button" data-d="pick-exe">选择</button></div></div><div class="field"><label>它提供什么数据或能力？</label><textarea name="description" rows="3" placeholder="供 Agent 理解这个工具的接口、数据格式和用途。"></textarea></div><button class="button primary" type="submit">添加到画布</button></form></dialog></section>`;
       this.board=root.querySelector('.flow-canvas');this.world=root.querySelector('.flow-world');this.inspector=root.querySelector('.designer-inspector');this.activity=root.querySelector('.designer-activity');
       this.click=event=>this.onClick(event);this.input=event=>this.onInput(event);this.submit=event=>this.onSubmit(event);
+      this.root.querySelector('.designer-header-actions').insertAdjacentHTML('afterbegin','<button class="button primary" data-d="research">连接项目文献</button>');
+      this.root.querySelector('.designer-header p').textContent='画线 → 本地 Agent 生成版本 → 预览 → 启用。只有启用的版本才会写入目标工具。';
+      this.root.insertAdjacentHTML('beforeend',`<dialog id="research-setup-dialog" class="designer-dialog"><form id="research-setup-form"><div class="designer-dialog-head"><h2>OpenResearch 项目文献流</h2><button type="button" class="icon-button" data-d="close-research">✕</button></div><p>alphaXiv 保存项目收藏与分类；其官方接口尚不支持写入笔记或高亮，因此引用原文与出处保存到 Zotero。只读取已完成对话的当前分支。</p><div class="field"><label>选择项目（可多选）</label><select id="research-projects" name="projects" multiple size="5" required></select></div><div class="field"><label>每次最多处理论文数</label><input name="max_papers" type="number" min="1" max="200" value="25" required></div><div class="field"><label>分类规则（名称与关键词，可修改 JSON）</label><textarea name="categories" rows="6">[{"name":"模型与方法","keywords":["model","architecture","transformer","模型","方法"]},{"name":"训练与优化","keywords":["training","optimizer","scaling","训练","优化"]},{"name":"数据与评测","keywords":["dataset","benchmark","evaluation","数据","评测"]}]</textarea></div><div class="field"><label>研究内容分类</label><select name="classifier"><option value="keywords">关键词规则 · 不外发正文</option><option value="codex">Codex · 语义分类</option><option value="claude">Claude Code · 语义分类</option></select><small>语义分类会将所选项目的引用上下文交给已登录的模型服务，消耗其额度；重复结果缓存。</small></div><label class="research-option"><input type="checkbox" name="allow_model_context"> 我允许将本次所选项目的引用上下文发送给所选模型服务进行分类</label><label class="research-option"><input type="checkbox" name="include_user" checked> 包含用户在对话中引用的论文</label><label class="research-option"><input type="checkbox" name="include_tools"> 包含工具返回的论文链接（标记为检索发现）</label><label class="research-option"><input type="checkbox" name="download_pdf" checked> PDF 归档到已配置的同步目录</label><label class="research-option"><input type="checkbox" name="highlight_quotes" checked> 对已核实位置的逐字引文创建 Zotero 高亮</label><div class="field"><label>启用后检查频率</label><select name="schedule"><option value="manual">手动运行</option><option value="hourly">每小时</option><option value="daily">每天</option></select></div><p class="inspector-note">创建两条草稿连线；还需生成、测试并启用各自版本。不会修改已有收藏或人工笔记。</p><button class="button primary" type="submit">添加 / 更新两条项目连线</button></form></dialog>`);
       root.addEventListener('click',this.click);root.addEventListener('input',this.input);root.addEventListener('change',this.input);root.addEventListener('submit',this.submit);
       this.board.addEventListener('pointerdown',event=>this.pointerDown(event));this.board.addEventListener('pointermove',event=>this.pointerMove(event));this.board.addEventListener('pointerup',event=>this.pointerUp(event));this.board.addEventListener('pointercancel',()=>{this.drag=null;this.preview=null;this.paint();});
       this.board.addEventListener('wheel',event=>{if(event.ctrlKey||event.metaKey){event.preventDefault();this.zoom(event.deltaY<0?.1:-.1);}},{passive:false});
@@ -25,6 +28,11 @@ window.NexusDesigner = (() => {
       try {
         const data=await this.api('/api/designer');if(this.destroyed)return;
         const first=!this.project;this.remote=data;
+        if(this.pendingVersion){
+          const ready=data.versions?.find(v=>v.id===this.pendingVersion&&v.plan);
+          if(ready){this.selectedVersion=ready.id;this.pendingVersion=null;}
+          else if(data.runs.some(r=>r.id===this.pendingVersion&&['error','cancelled'].includes(r.status)))this.pendingVersion=null;
+        }
         const graphStamp=JSON.stringify(data.project),graphChanged=graphStamp!==this.graphStamp;this.graphStamp=graphStamp;
         if(!this.dirty&&!this.drag)this.project=structuredClone(data.project);
         if(first){
@@ -47,7 +55,7 @@ window.NexusDesigner = (() => {
     async save(){const sample=this.inspector.querySelector('[data-edge-field=sample]');if(sample&&!sample.checkValidity())throw Error('测试样例不是有效 JSON，请先修正。');const data=await this.api('/api/designer/save',this.project);this.remote=data;this.project=structuredClone(data.project);this.dirty=false;clearTimeout(this.draftTimer);localStorage.removeItem('rn-designer-draft');this.updateStatus();this.paint();return data;}
     node(id){return this.project?.nodes.find(node=>node.id===id);}
     edge(id){return this.project?.edges.find(edge=>edge.id===id);}
-    versions(id){return(this.remote?.versions||this.remote?.runs||[]).filter(run=>run.kind==='build'&&run.edge_id===id&&run.plan);}
+    versions(id){return(this.remote?.versions||this.remote?.runs||[]).filter(run=>run.kind==='build'&&run.edge_id===id&&run.plan&&run.current_contract!==false);}
     path(edge){const a=this.node(edge.source),b=this.node(edge.target);if(!a||!b)return'';const x=a.x+210,y=a.y+66,tx=b.x,ty=b.y+66,d=Math.max(65,Math.abs(tx-x)*.5);return`M${x} ${y} C${x+d} ${y},${tx-d} ${ty},${tx} ${ty}`;}
     paint(){
       if(!this.project)return;
@@ -86,8 +94,12 @@ window.NexusDesigner = (() => {
         <div class="field"><label>这条连线要完成什么？</label><textarea data-edge-field="purpose" rows="4" placeholder="例如：读取新论文，按 DOI 去重，整理成 Markdown 阅读清单。">${esc(edge.purpose||'')}</textarea></div><div class="field"><label>流动的数据</label><input data-edge-field="data_type" value="${esc(edge.data_type||'')}" placeholder="论文 / PDF / 笔记 / 实验结果"></div><div class="field"><label>运行方式</label><select data-edge-field="schedule" ${edge.builtin?'disabled':''}>${[['manual','手动运行'],['hourly','每小时'],['daily','每天']].map(([v,t])=>`<option value="${v}" ${edge.schedule===v?'selected':''}>${t}</option>`).join('')}</select></div><details class="flow-sample"><summary>测试样例 · JSON</summary><textarea data-edge-field="sample" rows="6">${esc(JSON.stringify(edge.sample||[],null,2))}</textarea><small>样例测试模拟网络数据，不发送请求、不写入外部工具。</small></details>
         ${edge.builtin?`<div class="note">这条连线复用已经运行的去重归档流程。账户、同步频率和开关继续在“连接与设置”管理。</div><button class="button primary full" data-d="run-edge" ${busy?'disabled':''}>立即检查并归档</button>`:
         `<div class="inspector-section-title">让本地 Agent 实现</div><div class="field"><label>使用哪个 Agent？</label><select id="designer-provider">${(this.remote?.agents||[]).map(agent=>`<option value="${agent.id}" ${agent.id===this.provider?'selected':''} ${!agent.installed?'disabled':''}>${agent.name}${agent.installed?' · 已安装':' · 未找到'}</option>`).join('')}</select></div><button class="button primary full" data-d="build" ${busy?'disabled':''}>${busy?'Agent / 任务进行中…':'✦ 生成集成方案'}</button><small class="inspector-note">使用本地 CLI 的已有登录和默认模型，会消耗对应账号额度。</small>
-        ${versions.length?`<div class="inspector-section-title">集成版本</div><select id="designer-version">${versions.map(v=>`<option value="${v.id}" ${current?.id===v.id?'selected':''}>${v.id.slice(0,6)} · ${v.tested?'已测试':'待测试'}${active?.version===v.id?' · 当前启用':''}</option>`).join('')}</select><p class="plan-summary">${esc(current?.plan.summary||'')}</p><p class="inspector-note">${esc((current?.plan.requirements||[]).join('；'))}</p><ol class="plan-steps">${current?.plan.steps.map(s=>`<li>${esc(({input:'接收输入',http_get:'读取接口',http_post:'发送到目标工具',select:'选择数据',map:'整理字段',filter:'筛选',dedupe:'去重',write_json:'保存 JSON',write_markdown:'保存 Markdown',builtin_archive:'调用现有归档'})[s.op]||s.op)}</li>`).join('')}</ol>${current?.plan.notes?`<p class="inspector-note">${esc(current.plan.notes)}</p>`:''}<details><summary>查看方案详情</summary><pre class="plan-code">${esc(JSON.stringify(current?.plan,null,2))}</pre></details><div class="inspector-actions"><button class="button" data-d="test" ${busy?'disabled':''}>测试与预览</button><button class="button primary" data-d="activate" ${!current?.tested||current?.plan.readiness==='needs_setup'||busy?'disabled':''}>${active&&active.version!==current?.id?'切换 / 回退到此版本':'启用此版本'}</button></div>${active?`<div class="inspector-actions"><button class="button" data-d="run-edge" ${busy?'disabled':''}>运行连线</button><button class="button" data-d="disable">暂停</button></div>`:''}<div class="field"><label>希望 Agent 怎样改进？</label><textarea id="designer-feedback" rows="3" placeholder="例如：输出缺少 arXiv ID，请保留标题和编号。"></textarea></div><button class="button full" data-d="repair" ${busy?'disabled':''}>将失败记录交给 Agent 修订</button>`:`<div class="designer-gentle-empty">生成后，可以查看步骤、测试数据结果，再决定何时启用。</div>`}`}
+        ${versions.length?`<div class="inspector-section-title">集成版本</div><select id="designer-version">${versions.map(v=>`<option value="${v.id}" ${current?.id===v.id?'selected':''}>${v.id.slice(0,6)} · ${v.tested?'已测试':'待测试'}${active?.version===v.id?' · 当前启用':''}</option>`).join('')}</select><p class="plan-summary">${esc(current?.plan.summary||'')}</p><p class="inspector-note">${esc((current?.plan.requirements||[]).join('；'))}</p><ol class="plan-steps">${current?.plan.steps.map(s=>`<li>${esc(({input:'接收输入',http_get:'读取接口',http_post:'发送到目标工具',select:'选择数据',map:'整理字段',filter:'筛选',dedupe:'去重',write_json:'保存 JSON',write_markdown:'保存 Markdown',builtin_archive:'调用现有归档',orx_citations:'读取项目引用与分类',alpha_project_library:'保存 alphaXiv 项目收藏',zotero_project_notes:'保存 Zotero 引用笔记与标记'})[s.op]||s.op)}</li>`).join('')}</ol>${current?.plan.notes?`<p class="inspector-note">${esc(current.plan.notes)}</p>`:''}<details><summary>查看方案详情</summary><pre class="plan-code">${esc(JSON.stringify(current?.plan,null,2))}</pre></details><div class="inspector-actions"><button class="button" data-d="test" ${busy?'disabled':''}>测试与预览</button><button class="button primary" data-d="activate" ${!current?.tested||current?.plan.readiness==='needs_setup'||busy?'disabled':''}>${active&&active.version!==current?.id?'切换 / 回退到此版本':'启用此版本'}</button></div>${active?`<div class="inspector-actions"><button class="button" data-d="run-edge" ${busy?'disabled':''}>运行连线</button><button class="button" data-d="disable">暂停</button></div>`:''}<div class="field"><label>希望 Agent 怎样改进？</label><textarea id="designer-feedback" rows="3" placeholder="例如：输出缺少 arXiv ID，请保留标题和编号。"></textarea></div><button class="button full" data-d="repair" ${busy?'disabled':''}>将失败记录交给 Agent 修订</button>`:`<div class="designer-gentle-empty">生成后，可以查看步骤、测试数据结果，再决定何时启用。</div>`}`}
         <hr><button class="button danger" data-d="delete" ${edge.builtin?'disabled':''}>删除连线</button></div>`;
+      if(edge.research_scope){
+        const preview=this.previews?.[edge.id];
+        this.inspector.querySelector('.inspector-body').insertAdjacentHTML('afterbegin',`<div class="research-scope"><b>项目引用同步</b><p class="inspector-note">alphaXiv：项目收藏与分类。Zotero：引用上下文笔记；高亮需逐字定位。变更项目范围或规则后须重新生成并启用版本。</p><details><summary>项目范围与分类规则 · JSON</summary><textarea data-edge-field="research_scope" rows="10">${esc(JSON.stringify(edge.research_scope,null,2))}</textarea></details><button class="button full" data-d="source-preview">只读预览真实项目</button>${preview?`<p>${preview.papers} 篇论文 · ${preview.citations} 处引用 · 还有 ${preview.remaining_papers} 篇未纳入本次数量上限</p><details><summary>查看引用与归类</summary><pre class="plan-code">${esc(JSON.stringify(preview,null,2))}</pre></details>`:''}</div>`);
+      }
     }
     onInput(event){
       if(!this.project)return;const target=event.target;
@@ -96,7 +108,7 @@ window.NexusDesigner = (() => {
       const nodeField=target.dataset.nodeField,edgeField=target.dataset.edgeField;
       if(nodeField&&this.selection?.type==='node'){this.node(this.selection.id)[nodeField]=target.value;this.markDirty();this.paint();}
       if(edgeField&&this.selection?.type==='edge'){
-        let value=target.value;if(edgeField==='sample'){try{value=JSON.parse(value);target.setCustomValidity('');}catch{target.setCustomValidity('请输入有效 JSON');return;}}
+        let value=target.value;if(['sample','research_scope'].includes(edgeField)){try{value=JSON.parse(value);target.setCustomValidity('');}catch{target.setCustomValidity('请输入有效 JSON');return;}}
         this.edge(this.selection.id)[edgeField]=value;this.markDirty();if(edgeField==='data_type')this.paint();
       }
     }
@@ -105,6 +117,20 @@ window.NexusDesigner = (() => {
       const action=button.dataset.d;
       try{
         if(action==='add')this.root.querySelector('dialog').showModal();
+        else if(action==='research'){
+          if(this.dirty)await this.save();
+          const data=await this.api('/api/designer/research-projects');
+          this.root.querySelector('#research-projects').innerHTML=data.projects.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('');
+          this.root.querySelector('#research-setup-dialog').showModal();
+        }
+        else if(action==='close-research')this.root.querySelector('#research-setup-dialog').close();
+        else if(action==='source-preview'){
+          if(this.dirty)await this.save();
+          this.toast('正在只读检查实际对话，不写入外部工具…');
+          const data=await this.api('/api/designer/research-preview',{edge_id:this.selection.id});
+          this.previews??={};this.previews[this.selection.id]=data;this.inspect();
+          this.toast(`预览：${data.papers} 篇论文，${data.citations} 处引用；尚未归档。`);
+        }
         else if(action==='close-dialog')this.root.querySelector('dialog').close();
         else if(action==='retry')await this.poll();
         else if(action==='save'){await this.save();this.toast('画布已保存到本机。');}
@@ -137,12 +163,23 @@ window.NexusDesigner = (() => {
           const routes={build:'build',repair:'build',test:'test',activate:'activate',disable:'disable','run-edge':'run','run-graph':'run-graph'};
           const payload={edge_id:edge?.id,provider:this.provider,repair:action==='repair',version:this.selectedVersion,feedback:this.inspector.querySelector('#designer-feedback')?.value||''};
           const response=await this.api('/api/designer/'+routes[action],payload);this.focusRun=response.run_id;this.logOpen=true;
+          if(['build','repair'].includes(action))this.pendingVersion=response.run_id;
           if(action==='activate')this.toast('此版本已启用。可手动运行，或按所选频率执行。');
           await this.poll();this.inspect();this.renderActivity();
         }
       }catch(error){this.toast(error.message,true);}
     }
     async onSubmit(event){
+      if(event.target.id==='research-setup-form'){
+        event.preventDefault();
+        try{
+          const form=new FormData(event.target),options={project_ids:form.getAll('projects'),max_papers:Number(form.get('max_papers')),categories:JSON.parse(form.get('categories')),classifier:form.get('classifier'),include_user:form.has('include_user'),include_tools:form.has('include_tools'),download_pdf:form.has('download_pdf'),highlight_quotes:form.has('highlight_quotes')};
+          await this.api('/api/designer/research-setup',{research_scope:options,schedule:form.get('schedule'),allow_model_context:form.has('allow_model_context')});
+          this.dirty=false;this.root.querySelector('#research-setup-dialog').close();await this.poll();this.select('edge','orx-project-alpha');this.fit();
+          this.toast('两条项目连线已就绪。先预览真实引用，再分别生成、测试并启用。');
+        }catch(error){this.toast(error.message,true);}
+        return;
+      }
       if(event.target.id!=='designer-add-form')return;event.preventDefault();
       try{
         const data=Object.fromEntries(new FormData(event.target));

@@ -6,6 +6,7 @@ Research Nexus's original contributions are copyright © 2026 Rui Li (@shwhwhwh)
 | --- | --- | --- |
 | Electron | Desktop runtime | [MIT and bundled third-party notices](https://github.com/electron/electron/blob/main/LICENSE) |
 | Requests | Python HTTP client | [Apache-2.0](https://github.com/psf/requests/blob/main/LICENSE) |
+| pypdfium2 / PDFium | Verified PDF quotation positions | [Apache-2.0 / BSD-3-Clause and PDFium notices](https://github.com/pypdfium2-team/pypdfium2#licensing); retain wheel notices when distributing binaries |
 | Python | Backend runtime, installed separately | [PSF license](https://docs.python.org/3/license.html) |
 | Node.js | Development runtime, installed separately | [Node.js notices](https://github.com/nodejs/node/blob/main/LICENSE) |
 

@@ -28,6 +28,7 @@ class Engine:
         self.arxiv = arxiv or ArxivClient()
         self.local_reader = local_reader
         self.lock = threading.Lock()
+        self.paper_write_lock = threading.RLock()
         self.busy = False
         self.operation = ""
         self.stop = threading.Event()
@@ -54,7 +55,7 @@ class Engine:
     def status(self):
         jobs = self.store.jobs(self.scope())
         counts = Counter(j["status"] for j in jobs)
-        return {"name": "Research Nexus", "version": "0.3.0", "busy": self.busy,
+        return {"name": "Research Nexus", "version": "0.4.0", "busy": self.busy,
                 "operation": self.operation, "config": self.config.public(), "missing": self.missing(),
                 "counts": dict(counts), "jobs": jobs, "folders": self.store.meta("folders") or [],
                 "warnings": self.store.meta("warnings") or [], "last_sync": self.store.meta("last_sync"),
@@ -135,6 +136,10 @@ class Engine:
         self.event("info", "连接检查完成；未向 Zotero 写入测试文献。")
 
     def sync(self, only_canonical=None, recheck=False):
+        with self.paper_write_lock:
+            return self._sync(only_canonical, recheck)
+
+    def _sync(self, only_canonical=None, recheck=False):
         if self.missing():
             raise BridgeError("开始归档前还需要：" + "、".join(self.missing()))
         cfg = self.config.snapshot()

@@ -49,7 +49,7 @@ class Systems:
             installed = self.state.get("id") == self.manifest["id"]
             return {"catalog": [copy.deepcopy(self.manifest)], "installed": installed, "system": copy.deepcopy(self.state),
                     "requirements": requirements, "ready": installed and all(r["ok"] for r in requirements),
-                    "enabled": installed and cfg["auto_sync"], "diy_status": "unfinished"}
+                    "enabled": installed and cfg["auto_sync"], "diy_status": "beta"}
 
     def install(self, manifest):
         # Templates cannot choose keys, local paths, schedules, commands, or API origins.

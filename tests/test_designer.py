@@ -70,6 +70,14 @@ class DesignerTests(unittest.TestCase):
         candidate=self.candidate()
         with self.assertRaises(BridgeError):self.designer.run('example',candidate['id'],dry_run=False)
 
+    def test_version_inventory_marks_changed_contracts_stale(self):
+        candidate = self.candidate()
+        self.assertTrue(next(v for v in self.designer.public()['versions'] if v['id'] == candidate['id'])['current_contract'])
+        graph = copy.deepcopy(self.designer.project)
+        graph['edges'][-1]['purpose'] = 'Changed output'
+        self.designer.save_graph(graph)
+        self.assertFalse(next(v for v in self.designer.public()['versions'] if v['id'] == candidate['id'])['current_contract'])
+
     def test_cannot_inject_activation_via_canvas_save(self):
         graph=copy.deepcopy(self.designer.project);graph['active']={'example':{'version':'fake'}}
         self.designer.save_graph(graph);self.assertEqual(self.designer.project['active'],{})

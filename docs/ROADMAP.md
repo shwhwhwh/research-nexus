@@ -7,10 +7,10 @@
 - Installed Zotero and OpenResearch windows inside the RN workspace; user-directed research handoff.
 - Download/import of the reviewed credential-free template, setup checklist, daily scheduling, themes, and tray support.
 
-## Unfinished / 未完成
+## DIY Beta / 当前源码版
 
-**DIY visual data-flow building, agent-generated connectors, and autonomous evolution are under development, not released features.** Their old experimental execution endpoints and scheduler are disabled.
+DIY canvas editing, local agent-generated declarative plans, previews, activation, repair versions and scheduling are available in the v0.4 source build. OpenResearch project references can populate alphaXiv project/category folders and Zotero provenance notes. See [DIY guide](DIY.md). Semantic classification requires explicit project/provider consent and caches results. Autonomous promotion and unrestricted code generation remain unavailable.
 
 Later work includes more reviewed templates, portable connector contracts, blank/custom systems, richer permissions, reviewed version upgrades, signed installers, and localization. Automatic Zotero-to-OpenResearch handoff remains planned.
 
-当前先发布可复用、可配置的第一套科研系统。DIY 画线、Agent 自动接线与系统自动演化暂未完成；后续再逐步开放，避免把实验原型描述为现成功能。
+当前源码版已开放 DIY 画线、声明式方案生成、测试、启用、修订和定时运行，并新增 OpenResearch 项目引用流。语义分类需按项目和提供商授权，结果缓存；自主发布修订未开放。

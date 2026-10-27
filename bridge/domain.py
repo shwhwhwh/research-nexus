@@ -114,7 +114,7 @@ def parse_library(result: dict) -> tuple[list[dict], list[Paper], list[str]]:
                 root = ET.fromstring(text)
                 for f in root.iter("folder"):
                     d = dict(f.attrib)
-                    for k in ("name", "folder_id", "paper_count", "type"):
+                    for k in ("name", "folder_id", "paper_count", "type", "parent_id", "parent_folder_id"):
                         if f.find(k) is not None:
                             d[k] = f.findtext(k)
                     d["papers"] = []
@@ -146,7 +146,8 @@ def parse_library(result: dict) -> tuple[list[dict], list[Paper], list[str]]:
         partial = count > len(entries) or bool(f.get("has_more") or f.get("truncated"))
         if partial:
             warnings.append(f"文件夹“{name}”返回 {len(entries)}/{count} 篇，官方接口有截断；此次只处理已返回条目，不能宣称全量同步。")
-        folders.append({"id": fid, "name": name, "paper_count": count, "returned": len(entries), "partial": partial})
+        folders.append({"id": fid, "name": name, "parent_id": f.get("parent_id") or f.get("parent_folder_id") or f.get("parentId") or None,
+                        "paper_count": count, "returned": len(entries), "partial": partial})
         for record in entries:
             paper = paper_from_record(record, fid, name)
             key = paper.canonical

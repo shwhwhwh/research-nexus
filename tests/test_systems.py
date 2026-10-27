@@ -75,7 +75,7 @@ class SystemTests(unittest.TestCase):
     def test_template_never_claims_automatic_openresearch_handoff(self):
         orx=next(f for f in self.manifest['flows'] if f['target']=='openresearch')
         self.assertEqual(orx['mode'],'manual')
-        self.assertEqual(self.systems.public()['diy_status'],'unfinished')
+        self.assertEqual(self.systems.public()['diy_status'],'beta')
 
     def test_missing_local_files_and_unknown_configuration_block_setup(self):
         self.systems.install(self.manifest)

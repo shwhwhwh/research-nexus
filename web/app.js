@@ -50,7 +50,7 @@ function navigate(name) {
   document.body.classList.remove('tool-open');$('#tool-controls').classList.add('hidden');
   window.workspace?.hideTool();
   $('.nav.active')?.classList.remove('active');$(`.nav[data-page="${name}"]`)?.classList.add('active');
-  $('#page-title').textContent={home:'工作台',systems:'系统模板',designer:'DIY 搭建 · 未完成',archive:'归档记录',library:'本地文献',settings:'连接与设置'}[name];
+  $('#page-title').textContent={home:'工作台',systems:'系统模板',designer:'DIY 系统设计器',archive:'归档记录',library:'本地文献',settings:'连接与设置'}[name];
   render();if(name==='library')loadLibrary();
 }
 function hero(title,description,badge='YOUR RESEARCH SPACE') {
@@ -109,7 +109,7 @@ function library() {
 }
 function render() {
   if(page==='systems'){window.NexusSystems?.mount($('#main'),{api,toast,openBuiltin:openTool});return;}
-  if(page==='designer'){$('#main').innerHTML=hero('DIY 数据流搭建 · 未完成','自定义数据流与 Agent 自动演化仍在开发中。当前请使用已搭建好的系统模板。','UNDER DEVELOPMENT')+`<section class="panel"><div class="panel-body"><p>第一个可用系统：alphaXiv / Zotero / OpenResearch + Google Drive。</p><button class="button primary" data-go="systems">打开 System Templates →</button></div></section>`;return;}
+  if(page==='designer'){document.body.classList.add('designer-open');window.NexusDesigner?.mount($('#main'),{api,toast,openBuiltin:openTool});return;}
   if(!state)return;
   $('#main').innerHTML=({home,archive,settings,library}[page]||home)();
 }

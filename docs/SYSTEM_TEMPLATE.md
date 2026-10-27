@@ -28,4 +28,4 @@ Google Drive's own client synchronizes PDF bytes; RN does not report its cloud u
 
 ## If setup is incomplete
 
-The checklist identifies missing keys, app files, folder/login acknowledgments, and API read checks. Blank password fields keep saved keys. A changed key or user ID invalidates old connection checks. An unavailable Drive folder blocks PDF placement; a failed upload/link remains visible for retry. Native tool embedding is experimental and Windows-only. DIY editing remains unfinished.
+The checklist identifies missing keys, app files, folder/login acknowledgments, and API read checks. Blank password fields keep saved keys. A changed key or user ID invalidates old connection checks. An unavailable Drive folder blocks PDF placement; a failed upload/link remains visible for retry. Native tool embedding is experimental and Windows-only. The separate v0.4 DIY designer is Beta; see [DIY guide](DIY.md).

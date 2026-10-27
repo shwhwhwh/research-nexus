@@ -8,7 +8,7 @@
 
 Research Nexus (RN) is a local research workspace and top-level controller. Its first **System Template** connects alphaXiv, Zotero, OpenResearch, and a Google Drive desktop folder. Install the template, connect your own accounts and installed tools, then use the existing system inside RN.
 
-**DIY data-flow building and agent-driven self-evolution are unfinished.** They are marked as under development in the app and are not available in this release. The earlier experimental designer is retained internally for development; its execution APIs and scheduler are disabled.
+**The v0.4 source build adds a DIY designer (Beta).** Draw a flow, have your local Codex/Claude Code compile a version, preview, activate, and run it. The OpenResearch project-citation route organizes alphaXiv folders and saves source-context notes to Zotero. [DIY guide](docs/DIY.md) · [中文](docs/DIY.zh-CN.md). Autonomous promotion of agent revisions is not enabled. The downloadable v0.3.0 release/demo below covers Template 01.
 
 Created and maintained by **[Rui Li (@shwhwhwh)](https://github.com/shwhwhwh)**. Copyright © 2026 Rui Li. [MIT License](LICENSE); retain its copyright and permission notice when redistributing.
 
@@ -83,7 +83,7 @@ npm run test:systems
 npm run test:alpha
 ```
 
-Tests use isolated fixture storage. The system UI test downloads/imports the template, completes dummy setup, archives two fictional papers with the real engine, checks repeat deduplication, and verifies that DIY execution is disabled. No real accounts or tools are opened. Optional [CI template](docs/ci/check.yml) requires repository workflow permission to enable.
+Tests use isolated fixture storage. The system UI test downloads/imports the template, completes dummy setup, archives two fictional papers with the real engine, checks repeat deduplication, and verifies that the DIY canvas is available while malformed requests are rejected. No real accounts or tools are opened. Optional [CI template](docs/ci/check.yml) requires repository workflow permission to enable.
 
 Desktop lifecycle tests cover delayed/failed native detach and repeated quit requests. RN waits for the native host to verify that external windows have been restored before it exits; a failed detach keeps RN running for a retry. For an opt-in check with your installed applications, start RN with `--verify-native-tools` (add `--quit-after-native-check` for an exit/reopen check). This opens the real application windows and records only window identity and geometry under ignored `data/`, without capturing their content.
 

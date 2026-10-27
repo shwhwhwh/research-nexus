@@ -13,7 +13,7 @@ import requests
 from .domain import BridgeError, Paper, parse_arxiv_atom, parse_arxiv_html, parse_library
 
 
-UA = "ResearchNexus/0.3 (local personal literature archiver)"
+UA = "ResearchNexus/0.4 (local personal literature archiver)"
 
 
 def validate_key(key, service):
@@ -62,6 +62,27 @@ class AlphaClient:
         self.session_id = None
         self.protocol = "2025-03-26"
         self.counter = 0
+        self._tools = None
+
+    def tools(self):
+        if self._tools is None:
+            if not self.key:
+                raise BridgeError("请先填写 alphaXiv API Key。")
+            result = self._rpc("initialize", {"protocolVersion": self.protocol, "capabilities": {},
+                              "clientInfo": {"name": "research-nexus", "version": "0.4.0"}})
+            self.protocol = result.get("protocolVersion", self.protocol)
+            self._rpc("notifications/initialized", notification=True)
+            self._tools = {t["name"]: t for t in self._rpc("tools/list").get("tools", [])}
+        return self._tools
+
+    def call(self, name, arguments):
+        tools = self.tools()
+        if name not in tools:
+            raise BridgeError(f"alphaXiv 官方接口未提供 {name}；未猜测或调用未公开接口。")
+        schema = tools[name].get("inputSchema", {})
+        if set(schema.get("required", [])) - arguments.keys():
+            raise BridgeError(f"alphaXiv {name} 缺少必要参数。")
+        return self._rpc("tools/call", {"name": name, "arguments": arguments})
 
     def _rpc(self, method, params=None, notification=False):
         self.counter += 1
@@ -261,8 +282,9 @@ class ZoteroClient:
             raise BridgeError("Zotero 写入后未能读回条目；保留原编号，下次核对。")
         return item
 
-    def collection(self, name):
-        matches = [c for c in self.all("/collections") if c.get("data", {}).get("name") == name and not c.get("data", {}).get("parentCollection")]
+    def collection(self, name, parent=None):
+        matches = [c for c in self.all("/collections") if c.get("data", {}).get("name") == name and
+                   (c.get("data", {}).get("parentCollection") or None) == (parent or None)]
         if len(matches) > 1:
             raise BridgeError("目标分类存在多个同名顶层分类，请更换为唯一名称。")
         if matches:
@@ -272,7 +294,10 @@ class ZoteroClient:
         version = r.headers.get("Last-Modified-Version")
         if not version:
             raise BridgeError("Zotero 未返回文献库版本，无法安全创建分类。")
-        response = self.req("POST", "/collections", json=[{"name": name}], headers={"If-Unmodified-Since-Version": version}).json()
+        value = {"name": name}
+        if parent:
+            value["parentCollection"] = parent
+        response = self.req("POST", "/collections", json=[value], headers={"If-Unmodified-Since-Version": version}).json()
         created = response.get("successful", {}).get("0") or response.get("success", {}).get("0")
         if isinstance(created, str):
             return created
@@ -295,6 +320,21 @@ class ZoteroClient:
                 return self.get(key)
         raise BridgeError("Zotero 条目连续发生并发修改；已保留人工内容，请稍后重试。")
 
+    def add_tags(self, item, tags):
+        for _ in range(3):
+            latest = self.get(item["key"])
+            if not latest:
+                raise BridgeError("Zotero 文献已删除，未重新创建。")
+            existing = latest["data"].get("tags", [])
+            added = [{"tag": t} for t in tags if t not in {x.get("tag") for x in existing}]
+            if not added:
+                return latest
+            r = self.req("PATCH", f"/items/{item['key']}", json={"tags": existing + added},
+                         headers={"If-Unmodified-Since-Version": str(latest["version"])}, expected=(204, 412))
+            if r.status_code == 204:
+                return self.get(item["key"])
+        raise BridgeError("Zotero 标签存在并发修改，请稍后重试。")
+
     def link_file(self, attachment_key, parent_key, path):
         current = self.get(attachment_key)
         if current:
@@ -310,6 +350,22 @@ class ZoteroClient:
         data.update({"key": attachment_key, "parentItem": parent_key, "path": str(path),
                      "title": "Full Text PDF", "contentType": "application/pdf"})
         return self.create(data)
+
+    def append_note_metadata(self, key, ownership_marker, marker, text):
+        import html
+        for _ in range(3):
+            current = self.get(key)
+            if not current or current["data"].get("itemType") != "note" or ownership_marker not in current["data"].get("note", ""):
+                raise BridgeError("无法确认引用笔记归属，未修改。")
+            content = current["data"]["note"]
+            if marker in content:
+                return
+            content += "<p>" + html.escape(text) + "</p><p>" + html.escape(marker) + "</p>"
+            r = self.req("PATCH", "/items/" + key, json={"note": content},
+                headers={"If-Unmodified-Since-Version": str(current["version"])}, expected=(204, 412))
+            if r.status_code == 204:
+                return
+        raise BridgeError("引用笔记正在被编辑，未覆盖人工内容，请稍后重试。")
 
     def trash_empty_attachment(self, attachment_key, parent_key):
         current = self.get(attachment_key)

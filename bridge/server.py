@@ -21,7 +21,7 @@ def serve(root: Path, port=0, *, engine_factory=Engine):
     systems = Systems(root, engine)
     csrf = secrets.token_urlsafe(32)
     class Handler(BaseHTTPRequestHandler):
-        server_version = "ResearchNexus/0.3"
+        server_version = "ResearchNexus/0.4"
 
         def log_message(self, *args):
             pass
@@ -57,6 +57,10 @@ def serve(root: Path, port=0, *, engine_factory=Engine):
                     return self.send(200, status)
                 if path == "/api/designer":
                     return self.send(200, designer.public())
+                if path == "/api/designer/research-projects":
+                    return self.send(200, {"projects": designer.research.projects()})
+                if path == "/api/designer/capabilities":
+                    return self.send(200, designer.research.capabilities())
                 if path == "/api/systems":
                     return self.send(200, systems.public())
                 if path == "/api/systems/template":
@@ -112,8 +116,10 @@ def serve(root: Path, port=0, *, engine_factory=Engine):
                     return self.send(200, systems.enable())
                 if path.startswith("/api/designer/"):
                     action = path.rsplit("/", 1)[-1]
-                    if action not in ("disable", "cancel"):
-                        return self.send(409, {"error": "DIY 数据流搭建尚未完成；请使用 System Template。"})
+                    if action == "research-setup":
+                        return self.send(200, designer.research_setup(payload))
+                    if action == "research-preview":
+                        return self.send(200, designer.research_preview(payload["edge_id"]))
                     if action == "save":
                         return self.send(200, designer.save_graph(payload))
                     if action == "build":
@@ -161,8 +167,7 @@ def serve(root: Path, port=0, *, engine_factory=Engine):
     engine.config._atomic(root / "data" / "runtime.json", ConfigInfo)
     print(json.dumps({"ready": True, "url": url}), flush=True)
     threading.Thread(target=engine.scheduler, daemon=True).start()
-    # DIY scheduling remains unpublished; the reviewed archive engine schedules
-    # the installed system. Legacy plans remain available for migration only.
+    threading.Thread(target=designer.scheduler, daemon=True).start()
     try:
         server.serve_forever(poll_interval=0.3)
     finally:

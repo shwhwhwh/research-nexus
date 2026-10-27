@@ -2,7 +2,7 @@
 
 [Watch / download the MP4](https://github.com/shwhwhwh/research-nexus/releases/download/v0.3.0/research-nexus-system-demo.mp4)
 
-This demo only presents System Template 01: download/import, initial configuration, daily checks, bookmark archiving, duplicate prevention, and the shared RN workspace for alphaXiv, Zotero, and OpenResearch. DIY building is unfinished and is not demonstrated as an available function.
+This demo only presents System Template 01: download/import, initial configuration, daily checks, bookmark archiving, duplicate prevention, and the shared RN workspace for alphaXiv, Zotero, and OpenResearch. The published v0.3.0 video predates DIY Beta and does not demonstrate it; current source-build functionality is documented in DIY.md.
 
 It records only an isolated RN webContents. External accounts, services, installed applications, and Drive login are simulated and clearly labeled. No real third-party app, user library, conversation, account, credential, desktop notification, or personal browser profile is opened. The actual RN archive engine writes two valid fixture PDFs and metadata/source notes to fake services; repeat execution is verified not to create new records. This demonstrates product behavior, not a new live-cloud acceptance test.
 
