@@ -1,6 +1,6 @@
 {
   "name": "research-nexus",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "private": true,
   "description": "A local research workspace with installable System Templates",
   "author": "Rui Li (@shwhwhwh)",
@@ -21,12 +21,13 @@
     "start": "electron .",
     "test": "node scripts/test.cjs",
     "test:desktop": "node --test tests/desktop-lifecycle.test.cjs",
-    "check": "node --check desktop/main.cjs && node --check desktop/quit-guard.cjs && node --check desktop/verify-native-tools.cjs && node --check desktop/tool-views.cjs && node --check desktop/reading-position.cjs && node --check desktop/native-apps.cjs && node --check desktop/openresearch.cjs && node --check desktop/preload.cjs && node --check web/appearance.js && node --check web/designer.js && node --check web/app.js && node --check web/systems.js && node --check scripts/record-system-demo.cjs && node --check desktop/verify-diy-live.cjs && node --check web/graph-layout.js",
+    "check": "node --check desktop/main.cjs && node --check desktop/quit-guard.cjs && node --check desktop/verify-native-tools.cjs && node --check desktop/tool-views.cjs && node --check desktop/reading-position.cjs && node --check desktop/native-apps.cjs && node --check desktop/openresearch.cjs && node --check desktop/preload.cjs && node --check web/appearance.js && node --check web/designer.js && node --check web/app.js && node --check web/systems.js && node --check scripts/record-system-demo.cjs && node --check desktop/verify-diy-live.cjs && node --check web/graph-layout.js && node --check web/auto-builder.js",
     "test:alpha": "electron desktop/verify-alpha-switch.cjs",
     "test:designer": "electron desktop/verify-designer.cjs",
     "test:systems": "electron scripts/record-system-demo.cjs --test-only",
     "demo": "electron scripts/record-system-demo.cjs",
-    "test:graph": "node --test tests/graph-layout.test.cjs"
+    "test:graph": "node --test tests/graph-layout.test.cjs",
+    "test:builder:live": "python scripts/verify-system-builder.py --live-agent"
   },
   "devDependencies": {
     "electron": "45.0.0"

@@ -1,4 +1,4 @@
-/* The first reviewed System Template. DIY editing remains unfinished. */
+/* Reviewed starter system and reusable DIY blueprints. */
 window.NexusSystems = (() => {
   let instance;
   const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -34,6 +34,7 @@ window.NexusSystems = (() => {
         if(action==='overview'||action==='setup'){this.tab=action;this.render();}
         else if(action==='install'||action==='import'){
           const manifest=action==='import'?await window.workspace?.chooseSystemTemplate():this.data.catalog[0];if(!manifest)return;
+          if(manifest.format==='research-nexus-blueprint'){window.NexusAutoBuilder.open({api:this.api,toast:this.toast,openBuiltin:this.openBuiltin},manifest);return;}
           await this.api('/api/systems/install',{manifest});this.tab='setup';await this.load();this.toast('系统模板已安装。请配置自己的账号与软件。');
         }else if(action==='download'){
           const saved=await window.workspace?.saveSystemTemplate(this.data.catalog[0]);if(saved)this.toast('模板已保存，可在 RN 中导入。');

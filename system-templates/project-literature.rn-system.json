@@ -1,0 +1,101 @@
+{
+  "format": "research-nexus-blueprint",
+  "schema_version": 2,
+  "id": "literature-research-v2",
+  "name": "Literature Research System · Blueprint",
+  "description": "OpenResearch project citations to alphaXiv project folders and Zotero source notes, linked PDFs synchronized through Google Drive. Bookmark archiving remains the separately installed Template 01.",
+  "version": "2.0.0",
+  "components": [
+    {
+      "id": "alpha",
+      "name": "alphaXiv",
+      "recipe": "alphaxiv",
+      "url": "https://www.alphaxiv.org/",
+      "api_url": "https://api.alphaxiv.org/mcp/v1",
+      "credential_env": "RN_ALPHAXIV_API_KEY",
+      "description": ""
+    },
+    {
+      "id": "zotero",
+      "name": "Zotero",
+      "recipe": "zotero",
+      "url": "http://127.0.0.1:23119/",
+      "api_url": "",
+      "credential_env": "RN_ZOTERO_API_KEY",
+      "description": ""
+    },
+    {
+      "id": "orx",
+      "name": "OpenResearch",
+      "recipe": "openresearch",
+      "url": "http://127.0.0.1:4792/",
+      "api_url": "",
+      "credential_env": "",
+      "description": ""
+    },
+    {
+      "id": "drive",
+      "name": "Google Drive",
+      "recipe": "google-drive",
+      "url": "",
+      "api_url": "",
+      "credential_env": "",
+      "description": ""
+    }
+  ],
+  "flows": [
+    {
+      "id": "projects-alpha",
+      "source": "orx",
+      "target": "alpha",
+      "purpose": "Create project and category folders for OpenResearch paper citations.",
+      "data_type": "Project papers",
+      "schedule": "daily",
+      "sample_json": "[]",
+      "research_scope_json": "{\"project_ids\":[],\"auto_discover\":true,\"max_papers\":25,\"classifier\":\"keywords\",\"include_user\":true,\"include_tools\":false,\"download_pdf\":true,\"highlight_quotes\":true}",
+      "plan": {
+        "summary": "Create project and category folders for OpenResearch paper citations.",
+        "readiness": "ready",
+        "requirements": [],
+        "notes": "Uses implemented RN connectors. Each user configures their own accounts, local applications and Drive folder.",
+        "steps": [
+          {
+            "op": "orx_citations",
+            "settings": "{}"
+          },
+          {
+            "op": "alpha_project_library",
+            "settings": "{}"
+          }
+        ]
+      }
+    },
+    {
+      "id": "projects-zotero",
+      "source": "orx",
+      "target": "zotero",
+      "purpose": "Save project citation context and provenance to Zotero, with verified PDF quotation highlights.",
+      "data_type": "Citation notes",
+      "schedule": "daily",
+      "sample_json": "[]",
+      "research_scope_json": "{\"project_ids\":[],\"auto_discover\":true,\"max_papers\":25,\"classifier\":\"keywords\",\"include_user\":true,\"include_tools\":false,\"download_pdf\":true,\"highlight_quotes\":true}",
+      "plan": {
+        "summary": "Save project citation context and provenance to Zotero, with verified PDF quotation highlights.",
+        "readiness": "ready",
+        "requirements": [],
+        "notes": "Uses implemented RN connectors. Each user configures their own accounts, local applications and Drive folder.",
+        "steps": [
+          {
+            "op": "orx_citations",
+            "settings": "{}"
+          },
+          {
+            "op": "zotero_project_notes",
+            "settings": "{}"
+          }
+        ]
+      }
+    }
+  ],
+  "requirements": []
+}

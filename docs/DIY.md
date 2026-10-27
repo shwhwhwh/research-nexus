@@ -1,5 +1,7 @@
 # DIY research systems (Beta)
 
+For paper/description-driven builds and reusable compiled templates, see [Automatic builds](AUTO_BUILD.md).
+
 [中文](DIY.zh-CN.md)
 
 The designer is now available in the current source build. Template 01 remains available independently. Agent-generated plans are versioned declarations executed by RN's supported operations; they are not arbitrary generated programs.

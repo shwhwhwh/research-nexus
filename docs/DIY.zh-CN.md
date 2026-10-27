@@ -1,5 +1,7 @@
 # DIY 科研系统（Beta）
 
+论文 / 文字需求驱动的自动搭建及编译模板复用，见 [自动构建指南](AUTO_BUILD.zh-CN.md)。
+
 [English](DIY.md)
 
 当前源码版已开放 DIY 设计器。原 System Template 01 继续独立使用。Agent 生成的是 RN 支持的声明式方案，RN 按版本执行，不直接运行生成的任意程序。

@@ -1,3 +1,12 @@
+# v0.7.0 source build — Reusable automatic system builds
+
+- Paper/PDF/text input → one local-agent blueprint design → component preparation → bound channel previews → deployment and activation.
+- Blueprint v2 exports recipes and compiled channels; replay requires zero design-agent calls and preserves channel/version identity and receipts.
+- Reuse installed components, cache verified downloads, continue missing setup, and retain interrupted build state. Reviewed WinGet recipes and verified official OpenResearch CLI bundles handle supported installations.
+- Per-service credential bindings use local Windows DPAPI; exports omit keys, local paths, source papers and model-consent grants.
+- Existing tools/integrations remain intact. No demonstration nodes are added automatically. Unknown capabilities remain `needs_setup`.
+- Validation includes 113 Python tests, graph/desktop checks, isolated desktop import/build/run, and a real Codex acceptance test (one initial call; zero replay calls; stable repeated output).
+
 # v0.6.0 source build — Project events and layout templates
 
 - OpenResearch project onboarding uses its official local SSE stream (`/api/events`, `project.updated`), replacing RN's minute project-list polling.

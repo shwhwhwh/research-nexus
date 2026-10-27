@@ -13,15 +13,17 @@ from .domain import BridgeError
 from .engine import Engine
 from .designer import Designer
 from .systems import Systems
+from .builder import Builder
 
 
 def serve(root: Path, port=0, *, engine_factory=Engine):
     engine = engine_factory(root)
     designer = Designer(root, engine)
     systems = Systems(root, engine)
+    builder = Builder(root, designer)
     csrf = secrets.token_urlsafe(32)
     class Handler(BaseHTTPRequestHandler):
-        server_version = "ResearchNexus/0.6"
+        server_version = "ResearchNexus/0.7"
 
         def log_message(self, *args):
             pass
@@ -55,6 +57,10 @@ def serve(root: Path, port=0, *, engine_factory=Engine):
                     status = engine.status()
                     status["checks"] = engine.store.meta("checks")
                     return self.send(200, status)
+                if path == '/api/builder':
+                    return self.send(200, builder.public())
+                if path == '/api/builder/template':
+                    return self.send(200, builder.export(parse_qs(parsed.query).get('id', [''])[0]))
                 if path == "/api/designer":
                     return self.send(200, designer.public())
                 if path == "/api/designer/research-projects":
@@ -81,7 +87,7 @@ def serve(root: Path, port=0, *, engine_factory=Engine):
                     return self.send(200, file.read_bytes(), "application/pdf")
                 if path == "/icon.png":
                     return self.send(200, (root / "web" / "icon.png").read_bytes(), "image/png")
-                files = {"/": "index.html", "/app.js": "app.js", "/appearance.js": "appearance.js", "/style.css": "style.css", "/icon.svg": "icon.svg", "/designer.js": "designer.js", "/graph-layout.js": "graph-layout.js", "/designer.css": "designer.css", "/systems.js": "systems.js", "/systems.css": "systems.css"}
+                files = {"/": "index.html", "/app.js": "app.js", "/appearance.js": "appearance.js", "/style.css": "style.css", "/icon.svg": "icon.svg", "/designer.js": "designer.js", "/auto-builder.js": "auto-builder.js", "/auto-builder.css": "auto-builder.css", "/graph-layout.js": "graph-layout.js", "/designer.css": "designer.css", "/systems.js": "systems.js", "/systems.css": "systems.css"}
                 if path in files:
                     file = root / "web" / files[path]
                     content = file.read_text(encoding="utf-8")
@@ -104,10 +110,20 @@ def serve(root: Path, port=0, *, engine_factory=Engine):
                 return self.send(403, {"error": "Invalid local request"})
             try:
                 size = int(self.headers.get("Content-Length", 0))
-                if size < 0 or size > (524288 if self.path.startswith('/api/designer') else 65536) or self.headers.get("Content-Type", "").split(";")[0] != "application/json":
+                if size < 0 or size > (18000000 if self.path.startswith('/api/builder') else 524288 if self.path.startswith('/api/designer') else 65536) or self.headers.get("Content-Type", "").split(";")[0] != "application/json":
                     return self.send(400, {"error": "Invalid body"})
                 payload = json.loads(self.rfile.read(size) or b"{}")
                 path = urlparse(self.path).path
+                if path == '/api/builder/start':
+                    return self.send(202, builder.start(payload))
+                if path == '/api/builder/resume':
+                    return self.send(202, builder.resume(payload['job_id'], payload))
+                if path == '/api/builder/run':
+                    return self.send(202, builder.run(payload['job_id'], payload.get('input')))
+                if path == '/api/builder/cancel':
+                    return self.send(200, builder.cancel(payload['job_id']))
+                if path == '/api/builder/bindings':
+                    return self.send(200, builder.save_bindings(payload['job_id'], payload['variables']))
                 if path == "/api/systems/install":
                     return self.send(200, systems.install(payload.get("manifest")))
                 if path == "/api/systems/configure":

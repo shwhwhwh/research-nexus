@@ -23,7 +23,7 @@ def now():
 DEFAULTS = {
     "alpha_folder_ids": [], "zotero_user_id": "", "zotero_collection": "alphaXiv Inbox",
     "sync_interval_seconds": 600, "auto_sync": False, "download_pdf": True,
-    "upload_pdf": True, "openresearch_url": "http://127.0.0.1:4791",
+    "upload_pdf": True, "openresearch_url": "http://127.0.0.1:4792",
     "zotero_exe": r"C:\Program Files\Zotero\zotero.exe",
     "openresearch_exe": "", "max_papers_per_sync": 25,
     "pdf_storage": "zotero", "linked_pdf_dir": "",

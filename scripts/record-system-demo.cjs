@@ -5,7 +5,7 @@ const {spawn}=require('node:child_process'),{once}=require('node:events');
 const root=path.resolve(__dirname,'..'),testOnly=process.argv.includes('--test-only');
 const runRoot=path.join(root,'artifacts','system-demo-'+Date.now()),assets=path.join(root,'docs','assets');
 fs.mkdirSync(path.join(runRoot,'web'),{recursive:true});fs.mkdirSync(assets,{recursive:true});
-for(const name of ['index.html','app.js','appearance.js','style.css','systems.js','systems.css','designer.js','graph-layout.js','designer.css','icon.png','icon.svg'])fs.copyFileSync(path.join(root,'web',name),path.join(runRoot,'web',name));
+for(const name of ['index.html','app.js','appearance.js','style.css','systems.js','systems.css','designer.js','graph-layout.js','designer.css','auto-builder.js','auto-builder.css','icon.png','icon.svg'])fs.copyFileSync(path.join(root,'web',name),path.join(runRoot,'web',name));
 app.setPath('userData',path.join(runRoot,'profile'));app.on('window-all-closed',()=>{});nativeTheme.themeSource='light';
 let backend,win,address,csrf,encoder,encoderExit,frames=0,exeChoice=0,encoderError='';const checkpoints=[];
 const delay=ms=>new Promise(ok=>setTimeout(ok,ms));
@@ -27,6 +27,7 @@ app.whenReady().then(async()=>{
   const exported=path.join(runRoot,'downloaded-template.rn-system.json');
   ipcMain.handle('save-system-template',()=>{fs.copyFileSync(path.join(root,'system-templates','literature-workspace.rn-system.json'),exported);return true;});
   ipcMain.handle('choose-system-template',()=>JSON.parse(fs.readFileSync(exported,'utf8')));
+  ipcMain.handle('save-blueprint',async(_event,jobId)=>{const manifest=await api('/api/builder/template?id='+jobId);fs.writeFileSync(path.join(runRoot,'exported-blueprint.rn-system.json'),JSON.stringify(manifest));return true;});
   ipcMain.handle('open-setup-link',()=>true);ipcMain.handle('zotero-account-settings',()=>true);
   win=new BrowserWindow({show:false,width:1440,height:1000,useContentSize:true,webPreferences:{preload:path.join(root,'desktop','preload.cjs'),nodeIntegration:false,contextIsolation:true,sandbox:true,offscreen:testOnly,backgroundThrottling:false}});
   const wc=win.webContents,blocked=[];
@@ -99,6 +100,21 @@ app.whenReady().then(async()=>{
       nativeTheme.themeSource='light';await delay(300);
     }
     await click('[data-d=layout-orbital]');await delay(400);
+    const fixtureBlueprint={format:'research-nexus-blueprint',schema_version:2,id:'fictional-diy',name:'Fictional DIY system',description:'Portable reading list',version:'1.0.0',requirements:[],components:[{id:'input',name:'Paper input',recipe:'folder',url:'',api_url:'',credential_env:'',description:'Fictional JSON input'},{id:'output',name:'Reading output',recipe:'folder',url:'',api_url:'',credential_env:'',description:'Markdown reading list'}],flows:[{id:'reading',source:'input',target:'output',purpose:'Deduplicate papers and save Markdown',data_type:'JSON → Markdown',schedule:'manual',sample_json:JSON.stringify([{title:'Fictional A',arxiv:'0000.00001'},{title:'Fictional A',arxiv:'0000.00001'}]),research_scope_json:'',plan:{summary:'Fictional local reading list',readiness:'ready',requirements:[],notes:'No external services',steps:[{op:'dedupe',settings:'{"key":"arxiv"}'},{op:'write_markdown',settings:JSON.stringify({filename:'papers.md',template:'{{title}} · {{arxiv}}'})}]}}]};
+    await click('[data-d=auto-system]');await until(()=>wc.executeJavaScript('!!document.querySelector(".auto-builder")'),'Automatic system dialog missing');
+    await shot('12-auto-builder-input');fs.writeFileSync(exported,JSON.stringify(fixtureBlueprint));
+    await click('[data-auto=import]');await until(()=>wc.executeJavaScript('!document.querySelector(".builder-template-preview").hidden'),'Imported blueprint not shown');
+    await click('#auto-build-start');await until(async()=>{const data=await api('/api/builder');return data.jobs[0]?.status==='ready';},'Automatic blueprint deployment failed');
+    const built=(await api('/api/builder')).jobs[0];assert.equal(built.agent_calls,0);assert.equal(built.reused_template,true);
+    await until(()=>wc.executeJavaScript('!!document.querySelector("[data-auto=run]")'),'Build completion controls missing');await shot('13-auto-builder-ready');
+    await click('[data-auto=run]');await until(async()=>Boolean((await api('/api/builder')).jobs[0]?.run_result?.success),'Built system did not execute');
+    const actualOutput=path.join(runRoot,'data','designer','outputs');assert(fs.readdirSync(actualOutput).some(n=>fs.existsSync(path.join(actualOutput,n,'papers.md'))));
+    await click('[data-auto=export]');const blueprintFile=path.join(runRoot,'exported-blueprint.rn-system.json');assert(fs.existsSync(blueprintFile));
+    const exportedBlueprint=JSON.parse(fs.readFileSync(blueprintFile,'utf8'));assert.equal(exportedBlueprint.format,'research-nexus-blueprint');assert.equal(exportedBlueprint.input,undefined);
+    const stableVersions=JSON.stringify((await api('/api/designer')).project.versions);fs.copyFileSync(blueprintFile,exported);
+    await click('[data-auto=import]');await until(()=>wc.executeJavaScript('!document.querySelector("#auto-build-start").disabled'),'Replay start still busy');await click('#auto-build-start');await until(async()=>{const data=await api('/api/builder');return data.jobs.length===2&&data.jobs[0].status==='ready';},'Exported template replay failed');
+    assert.equal((await api('/api/builder')).jobs[0].agent_calls,0);assert.equal(JSON.stringify((await api('/api/designer')).project.versions),stableVersions);
+    await click('[data-auto=close]');
     const controls=await wc.executeJavaScript(`(()=>{const d=document.querySelector('#research-setup-dialog'),f=d.querySelector('form');d.showModal();f.elements.auto_discover.checked=true;f.elements.auto_discover.dispatchEvent(new Event('change',{bubbles:true}));f.elements.classifier.value='codex';return{projectsDisabled:f.elements.projects.disabled,projectsNotRequired:!f.elements.projects.required,futureConsentVisible:!document.querySelector('#research-future-consent').hidden,futureConsentUnchecked:!f.elements.allow_future_model_context.checked};})()`);
     assert.deepEqual(controls,{projectsDisabled:true,projectsNotRequired:true,futureConsentVisible:true,futureConsentUnchecked:true});
     await delay(350);await shot('09-project-onboarding');
@@ -110,7 +126,7 @@ app.whenReady().then(async()=>{
   await caption('Research Nexus. Your tools, one research system.','由 Rui Li（@shwhwhwh）创建和维护 · MIT 开源。');await hold(2.5);
   assert.deepEqual(blocked,[]);
   if(encoder){encoder.stdin.end();const [code]=await encoderExit;if(code!==0)throw Error(encoderError);}
-  const report={passed:true,isolated_storage:true,simulated_services:true,real_archive_engine:true,real_accounts_opened:false,external_network_disabled:true,template_download_import:true,setup_required_before_enable:true,daily_interval:86400,papers:2,pdf_files:2,repeat_creates_no_duplicates:true,diy_canvas_available:true,layout_templates_verified:['orbital','structured'],layout_themes_verified:['light','dark'],diy_invalid_request_rejected:true,frames,duration_seconds:frames/12,checkpoints};
+  const report={passed:true,isolated_storage:true,simulated_services:true,real_archive_engine:true,real_accounts_opened:false,external_network_disabled:true,template_download_import:true,setup_required_before_enable:true,daily_interval:86400,papers:2,pdf_files:2,repeat_creates_no_duplicates:true,diy_canvas_available:true,layout_templates_verified:['orbital','structured'],automatic_builder_import_deploy_run:true,builder_export_reimport_verified:true,template_replay_agent_calls:0,layout_themes_verified:['light','dark'],diy_invalid_request_rejected:true,frames,duration_seconds:frames/12,checkpoints};
   fs.writeFileSync(path.join(runRoot,'report.json'),JSON.stringify(report,null,2));
   if(!testOnly)fs.copyFileSync(path.join(runRoot,'01-overview.png'),path.join(assets,'demo-poster.png'));
   console.log(JSON.stringify({...report,checkpoints:undefined,runRoot}));await cleanup();app.quit();

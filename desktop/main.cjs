@@ -259,8 +259,14 @@ async function start() {
     ownSender(event);
     const result=await dialog.showOpenDialog(win,{title:'导入 Research Nexus System Template',properties:['openFile'],filters:[{name:'Research Nexus System Template',extensions:['json']}]});
     if(result.canceled)return null;
-    const file=result.filePaths[0];if(fs.statSync(file).size>65536)throw Error('模板文件过大。');
+    const file=result.filePaths[0];if(fs.statSync(file).size>524288)throw Error('模板文件过大。');
     return JSON.parse(fs.readFileSync(file,'utf8').replace(/^\uFEFF/,''));
+  });
+  ipcMain.handle('save-blueprint',async(event,jobId)=>{
+    ownSender(event);if(typeof jobId!=='string'||!/^[a-f0-9]{32}$/.test(jobId))throw Error('构建编号无效。');
+    const response=await fetch(origin+'/api/builder/template?id='+jobId);const manifest=await response.json();if(!response.ok)throw Error(manifest.error||'模板不可导出。');
+    const result=await dialog.showSaveDialog(win,{title:'导出可复用科研系统模板',defaultPath:manifest.id+'.rn-system.json',filters:[{name:'Research Nexus Blueprint',extensions:['json']}]});
+    if(result.canceled)return false;fs.writeFileSync(result.filePath,JSON.stringify(manifest,null,2)+'\n','utf8');return true;
   });
   ipcMain.handle('save-system-template',async(event,_manifest)=>{
     ownSender(event);

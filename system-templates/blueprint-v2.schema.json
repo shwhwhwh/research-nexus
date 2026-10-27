@@ -1,0 +1,214 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "schema_version",
+    "id",
+    "name",
+    "description",
+    "version",
+    "components",
+    "flows",
+    "requirements"
+  ],
+  "properties": {
+    "format": {
+      "type": "string",
+      "enum": [
+        "research-nexus-blueprint"
+      ]
+    },
+    "schema_version": {
+      "type": "integer",
+      "enum": [
+        2
+      ]
+    },
+    "id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string"
+    },
+    "components": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "recipe",
+          "url",
+          "api_url",
+          "credential_env",
+          "description"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "recipe": {
+            "type": "string",
+            "enum": [
+              "folder",
+              "website",
+              "http-api",
+              "alphaxiv",
+              "zotero",
+              "openresearch",
+              "google-drive",
+              "obsidian",
+              "python",
+              "node",
+              "git"
+            ]
+          },
+          "url": {
+            "type": "string"
+          },
+          "api_url": {
+            "type": "string"
+          },
+          "credential_env": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "flows": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "source",
+          "target",
+          "purpose",
+          "data_type",
+          "schedule",
+          "sample_json",
+          "research_scope_json",
+          "plan"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "target": {
+            "type": "string"
+          },
+          "purpose": {
+            "type": "string"
+          },
+          "data_type": {
+            "type": "string"
+          },
+          "schedule": {
+            "type": "string",
+            "enum": [
+              "manual",
+              "hourly",
+              "daily"
+            ]
+          },
+          "sample_json": {
+            "type": "string"
+          },
+          "research_scope_json": {
+            "type": "string"
+          },
+          "plan": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "summary",
+              "steps",
+              "notes",
+              "readiness",
+              "requirements"
+            ],
+            "properties": {
+              "readiness": {
+                "type": "string",
+                "enum": [
+                  "ready",
+                  "needs_setup"
+                ]
+              },
+              "requirements": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "summary": {
+                "type": "string"
+              },
+              "notes": {
+                "type": "string"
+              },
+              "steps": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "op",
+                    "settings"
+                  ],
+                  "properties": {
+                    "op": {
+                      "type": "string",
+                      "enum": [
+                        "input",
+                        "http_get",
+                        "http_post",
+                        "select",
+                        "map",
+                        "filter",
+                        "dedupe",
+                        "write_json",
+                        "write_markdown",
+                        "builtin_archive",
+                        "orx_citations",
+                        "alpha_project_library",
+                        "zotero_project_notes"
+                      ]
+                    },
+                    "settings": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "requirements": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

@@ -8,7 +8,7 @@
 
 Research Nexus（RN）是本地科研工作台与顶层控制器。第一个 **System Template（系统模板）** 已经连接 alphaXiv、Zotero、OpenResearch 及 Google Drive 同步目录。用户安装模板后，只需配置自己的账号授权、本地软件与同步文件夹，即可在 RN 中使用这套系统。
 
-**v0.6 源码版已开放 DIY 设计器（Beta）。** 画线后由本地 Codex / Claude Code 生成版本，预览、启用并运行。新增项目事件即时接入与轨道 / 规整两种画布模板，支持自动接入未来项目、来源与提供商绑定的分类授权和每日增量归档。OpenResearch 项目引用流：alphaXiv 分类收藏，Zotero 保存引用正文与出处笔记。参见 [中文指南](docs/DIY.zh-CN.md) / [English](docs/DIY.md)。Agent 修订版仍需用户核对和启用，不会自主替换。下方 v0.3.0 下载与演示视频展示原 System Template 01。
+**v0.7 新增自动构建系统（Beta）。** 输入论文或文字需求，由本机 Codex / Claude 设计可复用 Blueprint，RN 准备受支持组件并测试、部署已编译通道。导出模板后，其他用户可导入复用，无需重新调用 Agent 从头设计。参见 [自动构建指南](docs/AUTO_BUILD.zh-CN.md) / [English](docs/AUTO_BUILD.md)。保留项目事件即时接入、每日引用同步及轨道 / 规整画布。未知接口与适配器明确列为待办。下方 v0.3.0 下载与视频仍展示之前的 Template 01。
 
 **由 [Rui Li（@shwhwhwh）](https://github.com/shwhwhwh) 创建和维护，版权所有 © 2026 Rui Li。** 原创代码、文档和项目图标采用 [MIT 许可证](LICENSE)，复制与分发时须保留版权及许可声明。第三方工具归各自权利人所有。
 

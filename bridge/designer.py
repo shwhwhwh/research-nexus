@@ -78,6 +78,7 @@ class Designer:
         self.lock = threading.RLock()
         self.stop_event = threading.Event()
         self.processes, self.workers, self.agent_cache = {}, set(), None
+        self.integration_credentials = {}
         self.discovery_pending = False
         self.discovery_retry_at = 0
         self.discovery_backoff = 5
@@ -277,8 +278,8 @@ class Designer:
                                 event['error'] = status['error']
                 finally:
                     with self.lock:
-                        self.workers.discard('project-discovery')
                         self._save()
+                        self.workers.discard('project-discovery')
                         self.discovery_wakeup.set()
             threading.Thread(target=work, daemon=True).start()
             return {'queued': True}
@@ -346,6 +347,9 @@ class Designer:
             exe = npm / "@anthropic-ai" / "claude-code" / "bin" / "claude.exe"
             if exe.is_file():
                 return [str(exe)]
+        if provider in ('codex', 'claude'):
+            for native in (shutil.which(provider + '.exe'), str(Path.home() / '.local' / 'bin' / (provider + '.exe'))):
+                if native and Path(native).is_file(): return [native]
         raise BridgeError(f"未找到本地 {provider}，请先安装并在本地登录。")
 
     def agents(self):
@@ -397,6 +401,8 @@ class Designer:
                 secret = self.engine.config.secret(name)
                 if secret:
                     text = text.replace(secret, "[redacted]")
+        for value in self.integration_credentials.values():
+            if value: text = text.replace(value, "[redacted]")
         for name, value in os.environ.items():
             if value and len(value) >= 8 and re.search(r"KEY|TOKEN|SECRET|PASSWORD", name, re.I):
                 text = text.replace(value, "[redacted]")
@@ -427,8 +433,8 @@ class Designer:
             finally:
                 with self.lock:
                     run["finished"] = now()
-                    self.workers.discard(key)
                     self._save()
+                    self.workers.discard(key)
         threading.Thread(target=task, daemon=True).start()
         return run["id"]
 
@@ -439,7 +445,7 @@ class Designer:
             self.command(provider)
             if not self.edge(edge_id).get("purpose", "").strip():
                 raise BridgeError("先写清楚这条连线要做什么。")
-            if edge_id in self.workers or "graph" in self.workers or 'project-discovery' in self.workers:
+            if edge_id in self.workers or "graph" in self.workers or 'project-discovery' in self.workers or 'system-builder' in self.workers:
                 raise BridgeError("这条连线已有任务。")
             spec, contract = self.specification(edge_id), self.contract(edge_id)
             previous = next((r for r in reversed(self.runs) if r["edge_id"] == edge_id and r.get("error")), None)
@@ -612,7 +618,7 @@ Integration specification follows:\n""" + json.dumps(spec, ensure_ascii=False)
             if dry_run:
                 return "[credential]"
             aliases = {"RN_ALPHAXIV_API_KEY": "alphaxiv_key", "RN_ZOTERO_API_KEY": "zotero_key"}
-            result = self.engine.config.secret(aliases[name]) if self.engine and name in aliases else os.environ.get(name)
+            result = self.engine.config.secret(aliases[name]) if self.engine and name in aliases else self.integration_credentials.get(name) or os.environ.get(name)
             if not result:
                 raise BridgeError(f"缺少授权变量 {name}，请在本地环境中配置后重启 Nexus。")
             return result
@@ -740,7 +746,7 @@ Integration specification follows:\n""" + json.dumps(spec, ensure_ascii=False)
     def run(self, edge_id, version=None, dry_run=True, input_data=None):
         with self.lock:
             edge = self.edge(edge_id)
-            if edge_id in self.workers or "graph" in self.workers or 'project-discovery' in self.workers:
+            if edge_id in self.workers or "graph" in self.workers or 'project-discovery' in self.workers or 'system-builder' in self.workers:
                 raise BridgeError("这条连线已有任务正在运行。")
             if edge.get("builtin"):
                 plan = {"summary": "现有收藏归档", "notes": "复用原引擎", "steps": [{"op": "builtin_archive", "settings": "{}"}]}

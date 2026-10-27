@@ -19,6 +19,7 @@ contextBridge.exposeInMainWorld('workspace', {
   choosePdfFolder: () => ipcRenderer.invoke('choose-pdf-folder'),
   chooseToolExecutable: () => ipcRenderer.invoke('choose-tool-executable'),
   chooseSystemTemplate: () => ipcRenderer.invoke('choose-system-template'),
+  saveBlueprint: jobId => ipcRenderer.invoke('save-blueprint',jobId),
   saveSystemTemplate: manifest => ipcRenderer.invoke('save-system-template',manifest),
   openSetupLink: key => ipcRenderer.invoke('open-setup-link',key),
   openDesignerNode: id => ipcRenderer.invoke('open-designer-node',id),
