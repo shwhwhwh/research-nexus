@@ -1,3 +1,10 @@
+# v0.7.1 — Licensed Windows source kit — 2026-10-27
+
+- Versioned Windows source ZIP with complete installation instructions, system template and SHA-256 sums. Node.js/Electron/Python dependencies are installed by setup; no signed installer or third-party application binaries are bundled.
+- Includes LICENSE, LICENSING.json, commercial inquiry terms, contribution agreement and preserved historical MIT notice. Only newly licensed original material is covered by the new restricted grant; prior MIT material remains MIT.
+- Old public release downloads are withdrawn after the new release is verified. Historical tags and grants are not rewritten.
+- Product features remain those of v0.7.0; no new model or external-account behavior is introduced.
+
 # Licensing transition — 2026-10-27
 
 New first-licensed original material now uses the limited personal-study/noncommercial policy. Commercial permission is separate, collaboration remains welcome, and prior MIT source/releases retain their grants. This is a licensing/documentation transition, not a replacement of the v0.3.0 release assets. See LICENSE_HISTORY.md.

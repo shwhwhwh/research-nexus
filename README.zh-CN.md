@@ -4,17 +4,17 @@
 
 **一个工作空间，运行一套已经搭建好的科研系统。**
 
-[English](README.md) · [下载 v0.3.0](https://github.com/shwhwhwh/research-nexus/releases/tag/v0.3.0) · [模板使用指南](docs/SYSTEM_TEMPLATE.zh-CN.md) · [项目归属](OWNERSHIP.md)
+[English](README.md) · [下载 Windows 源码包 v0.7.1](https://github.com/shwhwhwh/research-nexus/releases/tag/v0.7.1) · [模板使用指南](docs/SYSTEM_TEMPLATE.zh-CN.md) · [项目归属](OWNERSHIP.md)
 
 Research Nexus（RN）是本地科研工作台与顶层控制器。第一个 **System Template（系统模板）** 已经连接 alphaXiv、Zotero、OpenResearch 及 Google Drive 同步目录。用户安装模板后，只需配置自己的账号授权、本地软件与同步文件夹，即可在 RN 中使用这套系统。
 
-**v0.7 新增自动构建系统（Beta）。** 输入论文或文字需求，由本机 Codex / Claude 设计可复用 Blueprint，RN 准备受支持组件并测试、部署已编译通道。导出模板后，其他用户可导入复用，无需重新调用 Agent 从头设计。参见 [自动构建指南](docs/AUTO_BUILD.zh-CN.md) / [English](docs/AUTO_BUILD.md)。保留项目事件即时接入、每日引用同步及轨道 / 规整画布。未知接口与适配器明确列为待办。下方 v0.3.0 下载与视频仍展示之前的 Template 01。
+**v0.7 新增自动构建系统（Beta）。** 输入论文或文字需求，由本机 Codex / Claude 设计可复用 Blueprint，RN 准备受支持组件并测试、部署已编译通道。导出模板后，其他用户可导入复用，无需重新调用 Agent 从头设计。参见 [自动构建指南](docs/AUTO_BUILD.zh-CN.md) / [English](docs/AUTO_BUILD.md)。保留项目事件即时接入、每日引用同步及轨道 / 规整画布。未知接口与适配器明确列为待办。v0.7.1 源码包包含当前功能与完整许可文件；下方历史视频只展示 Template 01，不代表自动构建器演示。
 
 **由 [Rui Li（@shwhwhwh）](https://github.com/shwhwhwh) 创建和维护，版权所有 © 2026 Rui Li。** 后续首次按新许可发布的原创内容保留全部权利；[个人学习、非商业试验及协作改进可免费进行](LICENSE)，商业化需[单独书面授权](COMMERCIAL_LICENSE.md)。欢迎提交 Issue 和 PR，贡献者保留署名并按[贡献条款](CONTRIBUTOR_AGREEMENT.md)授权项目维护与商业发布。**此前已发布的 MIT 版本及相应旧代码继续按 MIT 授权，包括商业使用；不追溯收费。** 参见[许可沿革](LICENSE_HISTORY.md)。第三方工具归各自权利人所有。
 
 ## System Template 01：文献科研系统
 
-[下载模板文件](https://github.com/shwhwhwh/research-nexus/releases/download/v0.3.0/literature-workspace.rn-system.json) · [查看模板内容](system-templates/literature-workspace.rn-system.json)
+[下载模板文件](https://github.com/shwhwhwh/research-nexus/releases/download/v0.7.1/literature-workspace.rn-system.json) · [查看模板内容](system-templates/literature-workspace.rn-system.json)
 
 ```mermaid
 flowchart LR
@@ -31,9 +31,9 @@ RN 负责收藏读取、去重和归档；Zotero 自己同步文献元数据，G
 
 ## 使用演示
 
-[![Research Nexus 第一个系统模板](docs/assets/demo-poster.png)](https://github.com/shwhwhwh/research-nexus/releases/tag/v0.3.0)
+[![Research Nexus 第一个系统模板](docs/assets/demo-poster.png)](https://github.com/shwhwhwh/research-nexus/releases/tag/v0.7.1)
 
-[观看 / 下载系统演示视频](https://github.com/shwhwhwh/research-nexus/releases/download/v0.3.0/research-nexus-system-demo.mp4) · [演示说明](docs/DEMO.md)
+[观看 / 下载系统演示视频](https://heathcliffak.com/assets/prototypes/research-nexus-system-demo.mp4) · [演示说明](docs/DEMO.md)
 
 视频只演示这个系统模板：独立 RN、虚构论文和模拟外部服务。实际运行 RN 的归档引擎，写入两个本地 PDF，并验证重复运行没有重复导入。第三方工具页面明确标为示意界面，不出现个人账号、真实文献库或研究对话。
 
@@ -41,14 +41,17 @@ RN 负责收藏读取、去重和归档；Zotero 自己同步文献元数据，G
 
 当前为 **Windows x64 源码预览版**，尚无签名安装包。安装 RN 需要 Windows 10/11、Node.js 22.12+（含 npm）、Python 3.10+（含 pip）及 Git。完成 RN 的一次安装后，再导入系统模板。
 
+下载 [research-nexus-v0.7.1-windows-source.zip](https://github.com/shwhwhwh/research-nexus/releases/download/v0.7.1/research-nexus-v0.7.1-windows-source.zip)，与同页 `SHA256SUMS.txt` 核对后，解压到可写的新目录（例如 `$HOME\Apps\RN-0.7.1`），进入其中的 `research-nexus` 文件夹。
+
 ```powershell
-git clone https://github.com/shwhwhwh/research-nexus.git
-cd research-nexus
+Set-Location "$HOME\Apps\RN-0.7.1\research-nexus"
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup.ps1
 npm start
 ```
 
 若 Python 不在默认位置，在安装命令后添加 `-Python "C:\path\to\python.exe"`。脚本安装依赖并编译窗口组件。请选择可写目录。安装后双击 **Start Research Nexus.vbs** 或 **Start System Templates.vbs**；也可运行 `desktop/install-nexus-shortcuts.ps1` 创建快捷方式。
+
+完整安装、升级与许可说明见 [INSTALL.md](INSTALL.md)。旧发布包已撤下公开下载入口；原有授权保持不变。
 
 ## 下载模板后如何运行
 

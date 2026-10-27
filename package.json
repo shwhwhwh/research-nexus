@@ -1,6 +1,6 @@
 {
   "name": "research-nexus",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "private": true,
   "description": "A local research workspace with installable System Templates",
   "author": "Rui Li (@shwhwhwh)",
@@ -27,7 +27,8 @@
     "test:systems": "electron scripts/record-system-demo.cjs --test-only",
     "demo": "electron scripts/record-system-demo.cjs",
     "test:graph": "node --test tests/graph-layout.test.cjs",
-    "test:builder:live": "python scripts/verify-system-builder.py --live-agent"
+    "test:builder:live": "python scripts/verify-system-builder.py --live-agent",
+    "package": "node scripts/package-release.mjs"
   },
   "devDependencies": {
     "electron": "45.0.0"
