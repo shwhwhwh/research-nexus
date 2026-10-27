@@ -30,7 +30,9 @@ DEFAULT_CATEGORIES = [
     {"name": "数据与评测", "keywords": ["dataset", "benchmark", "evaluation", "数据", "评测", "accuracy"]},
 ]
 ARXIV_LINK = re.compile(r'(?:https?://(?:www\.)?(?:arxiv\.org|alphaxiv\.org)/(?:abs|pdf|html)/|\barxiv\s*:\s*|"(?:arxiv_id|arxiv|universal_paper_id)"\s*:\s*")((?:\d{4}\.\d{4,5}|[a-z][a-z.\-]+/\d{7})(?:v\d+)?)(?:\.pdf)?(?![\w.])', re.I)
-DOI_LINK = re.compile(r'(?:https?://(?:dx\.)?doi\.org/|\bdoi\s*:\s*|"doi"\s*:\s*")(10\.\d{4,9}/[^\s<>"\]]+)', re.I)
+# Stop at Markdown brackets and CJK prose punctuation. Parentheses inside a
+# DOI remain valid; unmatched ASCII link-closing parentheses are trimmed below.
+DOI_LINK = re.compile(r'(?:https?://(?:dx\.)?doi\.org/|\bdoi\s*:\s*|"doi"\s*:\s*")(10\.\d{4,9}/[^\s<>"\[\]，。；：、（）【】《》]+)', re.I)
 
 
 def fingerprint(value):

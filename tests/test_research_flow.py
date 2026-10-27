@@ -131,6 +131,16 @@ class ResearchFlowTests(unittest.TestCase):
         with self.assertRaises(BridgeError):
             active_messages({"messages": [message("m", "x", "root")], "activeLeafId": "missing"})
 
+    def test_doi_stops_at_cjk_punctuation_and_adjacent_markdown(self):
+        text = ('[First](https://doi.org/10.1000/example)、[Next](https://doi.org/10.1000/second)，'
+                '[Third](https://doi.org/10.1000/third)。正文 doi:10.1000/fourth；后文')
+        rows = extract_citations(PROJECT, SESSION, {"messages": [message("m", text)]}, SCOPE, "http://127.0.0.1:4792")
+        self.assertEqual([row['doi'] for row in rows], ['10.1000/example', '10.1000/second', '10.1000/third', '10.1000/fourth'])
+        self.assertTrue(all(row['context'] == text for row in rows))
+        plain = 'doi:10.1000/example[another link]'
+        rows = extract_citations(PROJECT, SESSION, {"messages": [message("m", plain)]}, SCOPE, "http://127.0.0.1:4792")
+        self.assertEqual([row['doi'] for row in rows], ['10.1000/example'])
+
     def test_doi_parentheses_and_completed_tool_discovery_are_preserved(self):
         m = message("m", "[Paper](https://doi.org/10.1000/example(2020))")
         m["parts"].append({"id": "tool", "type": "tool", "state": {"status": "completed", "output": "https://arxiv.org/abs/1706.03762"}})
