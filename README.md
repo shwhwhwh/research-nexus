@@ -4,19 +4,19 @@
 
 **One workspace. A ready-made research system.**
 
-[简体中文](README.zh-CN.md) · [Download Windows source kit v0.7.1](https://github.com/shwhwhwh/research-nexus/releases/tag/v0.7.1) · [Template guide](docs/SYSTEM_TEMPLATE.md) · [Ownership](OWNERSHIP.md)
+[简体中文](README.zh-CN.md) · [Download Windows source kit v0.7.2](https://github.com/shwhwhwh/research-nexus/releases/tag/v0.7.2) · [Template guide](docs/SYSTEM_TEMPLATE.md) · [Ownership](OWNERSHIP.md)
 
 Research Nexus (RN) is a local research workspace and top-level controller. Its first **System Template** connects alphaXiv, Zotero, OpenResearch, and a Google Drive desktop folder. Install the template, connect your own accounts and installed tools, then use the existing system inside RN.
 
-**v0.7 adds automatic system builds (Beta).** Submit a paper or describe a workflow; your local Codex/Claude designs a reusable blueprint, RN prepares supported components and tests/deploys its compiled channels. Export/import replays those channels without redesigning with an agent. [Automatic build guide](docs/AUTO_BUILD.md) · [中文](docs/AUTO_BUILD.zh-CN.md). Event-driven OpenResearch project onboarding, daily citation delivery, and orbital/structured graph layouts remain available. Unsupported APIs/adapters stay explicit setup requirements. The v0.7.1 source kit contains the current build and licensing documents. The historical demo below shows Template 01; it does not demonstrate the automatic builder.
+**v0.7 adds automatic system builds (Beta).** Submit a paper or describe a workflow; your local Codex/Claude designs a reusable blueprint, RN prepares supported components and tests/deploys its compiled channels. Export/import replays those channels without redesigning with an agent. [Automatic build guide](docs/AUTO_BUILD.md) · [中文](docs/AUTO_BUILD.zh-CN.md). Event-driven OpenResearch project onboarding, daily citation delivery, and orbital/structured graph layouts remain available. Unsupported APIs/adapters stay explicit setup requirements. The v0.7.2 source kit contains the current build and licensing documents. The historical demo below shows Template 01; it does not demonstrate the automatic builder.
 
-Created and maintained by **[Rui Li (@shwhwhwh)](https://github.com/shwhwhwh)**. Copyright © 2026 Rui Li. **All rights reserved, with free personal study and noncommercial experiments under [LICENSE](LICENSE). Commercialization requires separate written authorization.**
+Created and maintained by **[Rui Li (@shwhwhwh)](https://github.com/shwhwhwh)**. Copyright © 2026 Rui Li. **All owner-controlled code in this official distribution, including earlier self-owned code, is offered under [LICENSE](LICENSE) 1.1: all rights reserved, with free personal study and noncommercial experiments. Commercialization requires separate written authorization.**
 Collaboration is welcome: [contribution terms](CONTRIBUTOR_AGREEMENT.md) · [commercial inquiry](COMMERCIAL_LICENSE.md) · [historical grants](LICENSE_HISTORY.md).
-**Historical RN MIT versions remain MIT, including commercial permissions; this transition does not retroactively restrict existing MIT material.**
+**Valid historical RN MIT grants remain effective within their original scope, including commercial rights. The current official offer covers all owner-controlled code; it does not revoke earlier grants or relicense third-party work.**
 
 ## System Template 01 — Literature Research System
 
-[Download the template](https://github.com/shwhwhwh/research-nexus/releases/download/v0.7.1/literature-workspace.rn-system.json) · [View its contents](system-templates/literature-workspace.rn-system.json)
+[Download the template](https://github.com/shwhwhwh/research-nexus/releases/download/v0.7.2/literature-workspace.rn-system.json) · [View its contents](system-templates/literature-workspace.rn-system.json)
 
 ```mermaid
 flowchart LR
@@ -33,7 +33,7 @@ No connector generation, canvas editing, or Codex/Claude Code call is needed to 
 
 ## Demo
 
-[![Research Nexus System Template 01](docs/assets/demo-poster.png)](https://github.com/shwhwhwh/research-nexus/releases/tag/v0.7.1)
+[![Research Nexus System Template 01](docs/assets/demo-poster.png)](https://github.com/shwhwhwh/research-nexus/releases/tag/v0.7.2)
 
 [Watch / download the system demo](https://heathcliffak.com/assets/prototypes/research-nexus-system-demo.mp4) · [Demo details](docs/DEMO.md)
 
@@ -43,7 +43,7 @@ The demo records RN itself with an isolated profile, fictional papers, simulated
 
 Current distribution: **Windows x64 source preview**, requiring Windows 10/11, Node.js 22.12+ with npm, Python 3.10+ with pip, and Git. There is no signed desktop installer yet. Install RN once before importing a system template.
 
-Download [research-nexus-v0.7.1-windows-source.zip](https://github.com/shwhwhwh/research-nexus/releases/download/v0.7.1/research-nexus-v0.7.1-windows-source.zip), compare it with `SHA256SUMS.txt`, and extract into a new writable folder such as `$HOME\Apps\RN-0.7.1`. Open its `research-nexus` subfolder.
+Download [research-nexus-v0.7.2-windows-source.zip](https://github.com/shwhwhwh/research-nexus/releases/download/v0.7.2/research-nexus-v0.7.2-windows-source.zip), compare it with `SHA256SUMS.txt`, and extract into a new writable folder such as `$HOME\Apps\RN-0.7.1`. Open its `research-nexus` subfolder.
 
 ```powershell
 Set-Location "$HOME\Apps\RN-0.7.1\research-nexus"

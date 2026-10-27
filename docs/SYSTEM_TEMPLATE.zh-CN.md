@@ -1,6 +1,6 @@
 # System Template 01：配置与使用
 
-[English](SYSTEM_TEMPLATE.md) · [下载模板](https://github.com/shwhwhwh/research-nexus/releases/download/v0.7.1/literature-workspace.rn-system.json) · [安装 RN v0.7.1](../INSTALL.md)
+[English](SYSTEM_TEMPLATE.md) · [下载模板](https://github.com/shwhwhwh/research-nexus/releases/download/v0.7.2/literature-workspace.rn-system.json) · [安装 RN v0.7.2](../INSTALL.md)
 
 要求已安装 Windows 版 Research Nexus 0.3.0+。在 RN 的 **系统模板 → 导入下载的模板** 中选择 `.rn-system.json`。模板使用 RN 已有归档引擎，不执行额外代码，不需要画图、编程或生成连接器。
 

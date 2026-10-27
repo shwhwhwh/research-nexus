@@ -2,7 +2,7 @@
 
 [Watch the historical Template 01 demo](https://heathcliffak.com/assets/prototypes/research-nexus-system-demo.mp4)
 
-This historical MIT video illustrates Template 01, not the automatic builder. Install the current [v0.7.1 source kit](https://github.com/shwhwhwh/research-nexus/releases/tag/v0.7.1); the old release download is withdrawn without changing earlier permissions.
+This historical MIT video illustrates Template 01, not the automatic builder. Install the current [v0.7.2 source kit](https://github.com/shwhwhwh/research-nexus/releases/tag/v0.7.2); the old release download is withdrawn without changing earlier permissions.
 
 This demo only presents System Template 01: download/import, initial configuration, daily checks, bookmark archiving, duplicate prevention, and the shared RN workspace for alphaXiv, Zotero, and OpenResearch. The published v0.3.0 video predates DIY Beta and does not demonstrate it; current source-build functionality is documented in DIY.md.
 

@@ -1,3 +1,10 @@
+# v0.7.2 — Entire official owner-controlled distribution — 2026-10-27
+
+- Policy 1.1 covers all owner-controlled code in this official distribution, including earlier self-owned code, not just new additions.
+- Personal study/noncommercial experiments and voluntary improvements remain free; commercial rights not already held require separate written authorization.
+- Preserve exact previous policy 1.0 / MIT texts, immutable boundaries, third-party notices and contributor rights. No historical release or prior grant is rewritten.
+- Versioned source kit, installation guide and package verification updated; application behavior is unchanged from v0.7.1.
+
 # v0.7.1 — Licensed Windows source kit — 2026-10-27
 
 - Versioned Windows source ZIP with complete installation instructions, system template and SHA-256 sums. Node.js/Electron/Python dependencies are installed by setup; no signed installer or third-party application binaries are bundled.

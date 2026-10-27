@@ -1,6 +1,6 @@
 # System Template 01 — setup and use
 
-[中文](SYSTEM_TEMPLATE.zh-CN.md) · [Download template](https://github.com/shwhwhwh/research-nexus/releases/download/v0.7.1/literature-workspace.rn-system.json) · [Install RN v0.7.1](../INSTALL.md)
+[中文](SYSTEM_TEMPLATE.zh-CN.md) · [Download template](https://github.com/shwhwhwh/research-nexus/releases/download/v0.7.2/literature-workspace.rn-system.json) · [Install RN v0.7.2](../INSTALL.md)
 
 Requires Research Nexus 0.3.0+ on Windows. Import the `.rn-system.json` file through **System Templates → Import downloaded template**. This installs a reviewed preset over RN's built-in archive engine; it is not an executable plugin. No coding, DIY canvas, or model-generated connector is required.
 

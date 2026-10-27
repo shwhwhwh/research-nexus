@@ -12,6 +12,8 @@ execFileSync('powershell.exe', ['-NoProfile', '-Command', 'Add-Type -AssemblyNam
 const root = join(target, 'research-nexus'), manifest = JSON.parse(await readFile(join(root, 'RELEASE-MANIFEST.json'), 'utf8'));
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 assert.equal(manifest.version, version);
+assert.equal(manifest.policyId, 'LicenseRef-Prototype-Plan-Personal-Noncommercial-1.1');
+assert.equal(manifest.licenseScope, 'all-owner-controlled-material-in-official-distribution');
 for (const file of manifest.files) {
   assert(!/(?:^|\/)(?:data|node_modules|vendor|\.git|__pycache__)(?:\/|$)/.test(file.path));
   assert.equal(hash(await readFile(join(root, file.path))), file.sha256, file.path);

@@ -1,4 +1,4 @@
-# Install Research Nexus v0.7.1 / 安装与升级
+# Install Research Nexus v0.7.2 / 安装与升级
 
 This is a **Windows x64 source kit**, not a signed installer. It includes RN source,
 the reviewed literature template and license documents. It does not bundle Node.js,
@@ -7,12 +7,12 @@ Python, Electron, Zotero, OpenResearch, Google Drive or personal data.
 ## Windows 安装
 
 1. 安装 Windows 10/11 x64、Node.js **22.12+**（含 npm）、Python **3.10+**（含 pip）及 Git，并确认新 PowerShell 能运行 `node --version`、`npm --version`、`python --version`。
-2. 从 [v0.7.1 Releases](https://github.com/shwhwhwh/research-nexus/releases/tag/v0.7.1) 下载 `research-nexus-v0.7.1-windows-source.zip` 和 `SHA256SUMS.txt`。核对下列哈希与校验文件中的 ZIP 行一致。
+2. 从 [v0.7.2 Releases](https://github.com/shwhwhwh/research-nexus/releases/tag/v0.7.2) 下载 `research-nexus-v0.7.2-windows-source.zip` 和 `SHA256SUMS.txt`。核对下列哈希与校验文件中的 ZIP 行一致。
 
 ```powershell
-Get-FileHash "$HOME\Downloads\research-nexus-v0.7.1-windows-source.zip" -Algorithm SHA256
-Expand-Archive -LiteralPath "$HOME\Downloads\research-nexus-v0.7.1-windows-source.zip" -DestinationPath "$HOME\Apps\RN-0.7.1"
-Set-Location "$HOME\Apps\RN-0.7.1\research-nexus"
+Get-FileHash "$HOME\Downloads\research-nexus-v0.7.2-windows-source.zip" -Algorithm SHA256
+Expand-Archive -LiteralPath "$HOME\Downloads\research-nexus-v0.7.2-windows-source.zip" -DestinationPath "$HOME\Apps\RN-0.7.2"
+Set-Location "$HOME\Apps\RN-0.7.2\research-nexus"
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup.ps1
 npm start
 ```
@@ -29,10 +29,10 @@ npm start
 
 Copyright © 2026 Rui Li (@shwhwhwh). All rights reserved, with free personal study,
 noncommercial experiments and voluntary improvements under [LICENSE](LICENSE).
-Commercial use of newly licensed restricted material requires [separate written authorization](COMMERCIAL_LICENSE.md).
+All owner-controlled code in this distribution, including earlier self-owned code, is offered under license 1.1. Commercial rights not already held require [separate written authorization](COMMERCIAL_LICENSE.md).
 Contributions follow [PP-CLA-1.0](CONTRIBUTOR_AGREEMENT.md), with contributor authorship retained.
 
-**此前已按 MIT 发布的 RN 代码及模板继续保留 MIT 权限，包括商业使用。**
+**既有有效的 RN MIT 授权继续保留原有范围的权限，包括商业使用；当前官方发行对全部自有代码提供许可 1.1。**
 新版本号、撤下旧 Releases、添加新许可都不撤回既有授权。具体边界见
 [LICENSE_HISTORY.md](LICENSE_HISTORY.md)、[LICENSING.json](LICENSING.json) 和 `LICENSES/`。
 当前官方安装入口只推荐此版本；历史视频仅是旧版 Template 01 的功能示意。

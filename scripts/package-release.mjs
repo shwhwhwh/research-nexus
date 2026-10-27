@@ -6,7 +6,8 @@ import { execFileSync } from 'node:child_process';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const { version } = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'));
 const policy = JSON.parse(await readFile(join(root, 'LICENSING.json'), 'utf8'));
-if (policy.policyId !== 'LicenseRef-Prototype-Plan-Personal-Noncommercial-1.0') throw Error('Unexpected release license');
+if (policy.policyId !== 'LicenseRef-Prototype-Plan-Personal-Noncommercial-1.1') throw Error('Unexpected release license');
+if (policy.scope !== 'all-owner-controlled-material-in-official-distribution' || !policy.preservesPriorGrants || !policy.preservesThirdPartyLicenses) throw Error('Incomplete release licensing scope');
 const output = join(root, 'artifacts/releases', `v${version}`), folder = join(output, 'research-nexus');
 await mkdir(join(root, 'artifacts/releases'), { recursive: true });
 await mkdir(output); // Refuse to overwrite a previously built release.
@@ -35,7 +36,7 @@ for (const path of ['desktop', 'web', 'bridge', 'scripts', 'system-templates', '
   'Start Research Nexus.cmd', 'Start Research Nexus.vbs', 'Start System Templates.vbs', 'Start System Designer.vbs']) await copy(path);
 const sourceCommit = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8', windowsHide: true }).trim();
 await writeFile(join(folder, 'RELEASE-MANIFEST.json'), JSON.stringify({ project: 'research-nexus', version,
-  sourceCommit, distribution: 'windows-x64-source-kit', policyId: policy.policyId,
+  sourceCommit, distribution: 'windows-x64-source-kit', policyId: policy.policyId, licenseScope: policy.scope,
   dependencyBinariesBundled: false, files: hashes }, null, 2) + '\n');
 const name = `research-nexus-v${version}-windows-source.zip`, zip = join(output, name);
 execFileSync('powershell.exe', ['-NoProfile', '-Command', 'Add-Type -AssemblyName System.IO.Compression.FileSystem; [System.IO.Compression.ZipFile]::CreateFromDirectory($env:RN_PACKAGE_DIRECTORY,$env:RN_ARCHIVE_PATH,[System.IO.Compression.CompressionLevel]::Optimal,$true)'],

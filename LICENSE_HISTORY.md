@@ -1,10 +1,15 @@
 # License history / 许可沿革
 
-Transition date: 2026-10-27. The transition is the commit introducing LICENSING.json and the new LICENSE; exact Git history is authoritative.
+## Current official distribution: policy 1.1, 2026-10-27
 
-- Historical source through [45ce4b423d0b1a4881bf169d228e014b14886b7f](https://github.com/shwhwhwh/research-nexus/tree/45ce4b423d0b1a4881bf169d228e014b14886b7f) was published under **MIT**; its complete text is preserved in [LICENSES/research-nexus-legacy-MIT.txt](LICENSES/research-nexus-legacy-MIT.txt).
-- The current source distribution grants free personal study, noncommercial experiments and voluntary contribution work under LICENSE, while reserving commercial rights to Rui Li. Only new material first licensed under these terms is newly restricted.
-- **Previously MIT-licensed RN material, including v0.3.0 and all source published through the boundary above, remains usable under MIT, including commercially. Unchanged legacy MIT material is not converted into exclusively noncommercial code.**
-- Third-party and accepted contributor rights remain distinct. No release asset, hash or historical Git tag is rewritten.
+From **v0.7.2**, all code and other material Rui Li owns or is expressly authorized to license in the official distribution is offered under [LICENSE](LICENSE) 1.1. This includes earlier self-owned code and is **not limited to newly added code**. Free personal study, noncommercial experiments and voluntary improvements remain available; commercial rights not already held need separate written authorization.
 
-中文：保留全部权利并明确授予个人学习、非商业试验及协作改进的免费许可；商业化需另行书面授权。此前已有效授出的权限不被撤销，第三方与贡献者的权利保持独立。
+## Preserved earlier offers
+
+- RN source through `45ce4b423d0b1a4881bf169d228e014b14886b7f`, including the v0.3.0 historical release, was offered under MIT. Its full text remains in `LICENSES/research-nexus-legacy-MIT.txt`. Validly obtained MIT permissions, including commercial rights, are not revoked.
+- Source through `f86114b2c4badd8bdf8300b8508b73ed5c72b952` / v0.7.1 recorded policy **1.0**, limited to material first published under that offer. Its exact text is archived in [LICENSES/prototype-plan-personal-noncommercial-1.0.txt](LICENSES/prototype-plan-personal-noncommercial-1.0.txt).
+- LICENSING.json retains earlier immutable boundaries, license file paths and hashes. Earlier license histories remain recorded in Git and LICENSES/HISTORY-before-1.1.md.
+- This is a new distribution offer, not retroactive cancellation. A recipient relying on a valid prior grant keeps the permissions it actually supplies; no retroactive fee is asserted. Preserving an archived license does not license later additions under it.
+- Third-party licenses and contributors' retained authorship remain distinct. Old release assets, hashes and Git tags are not rewritten.
+
+中文：今后官方发行中的全部自有代码统一按新许可提供，不只限于新增代码。个人学习、非商业试验及协作改进免费；尚未取得的商业权限需另行书面授权。既有有效授权和第三方许可不受影响，不追溯收费。
