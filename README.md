@@ -2,11 +2,85 @@
 
 # Research Nexus
 
-**One workspace. A ready-made research system.**
+**Build a system that fits the way you work.**
 
-[简体中文](README.zh-CN.md) · [Download Windows source kit v0.7.2](https://github.com/shwhwhwh/research-nexus/releases/tag/v0.7.2) · [Template guide](docs/SYSTEM_TEMPLATE.md) · [Ownership](OWNERSHIP.md)
+[简体中文](README.zh-CN.md) · [Vision](#why-were-building-rn) · [Join us](#build-this-with-us) · [Windows preview v0.7.2](https://github.com/shwhwhwh/research-nexus/releases/tag/v0.7.2) · [Ownership](OWNERSHIP.md)
 
-Research Nexus (RN) is a local research workspace and top-level controller. Its first **System Template** connects alphaXiv, Zotero, OpenResearch, and a Google Drive desktop folder. Install the template, connect your own accounts and installed tools, then use the existing system inside RN.
+Research Nexus (RN) is an early-stage project working toward a simple goal: **help people turn the tools they already use into a system that feels their own.** Describe what you want to accomplish, bring your tools and data, and build a workflow you can understand, run, and improve with an agent's help.
+
+**Research is our starting point. The long-term vision extends to learning, creative work, and other personal workflows. General-purpose, arbitrary-system construction is a goal, not a capability the current preview already delivers.**
+
+## Why we're building RN
+
+Useful work often happens between applications: a paper becomes a note, a note informs an experiment, and a result needs to find its way back into a project. People spend hours copying information, installing dependencies, reconnecting tools, and rebuilding workflows someone else has already figured out.
+
+We want that effort to accumulate. When one person gets a useful system working, another person should be able to understand it, adapt it to their own setup, and keep using it.
+
+> Having software that fits the way you work should be within everyone's reach.
+
+The experience we are working toward is:
+
+```mermaid
+flowchart LR
+    G["Describe a goal or bring a paper"] --> D["Inspect tools and data flow"]
+    D --> B["Agent-assisted setup and connections"]
+    B --> V["Validate and run"]
+    V --> T["Save a system template"]
+    T --> R["Adapt and reuse"]
+    R --> D
+```
+
+*This diagram describes the target experience. Support for tools, environments, validation, and adaptation is still being developed.*
+
+A system template should preserve the hard-won setup knowledge: components, dependencies, data contracts, connections, and checks. Its next user should supply their own accounts and data, then reuse what has already been validated instead of asking an agent to redesign everything.
+
+The agent helps implement and adapt connections. RN's intended role is the designer and controller: make the system visible, coordinate execution, explain inputs and outputs, and preserve evidence of what actually happened. Improvements should be inspectable, versioned, and tested.
+
+## Research first, a broader goal
+
+Research gives us concrete problems to solve: connecting literature and notes, preparing scientific software, moving data between tools, checking results, and handing a working setup to another researcher.
+
+| Stage | Scope |
+| --- | --- |
+| Published preview | The literature system template and Beta agent-assisted builds using supported component recipes and declarative operations. |
+| Active development | Richer workflow guides, reusable scientific systems, clearer execution evidence, and validation across user environments. |
+| Long-term vision | Let people build and maintain systems for many kinds of work, with a choice of tools and agents. |
+
+RN's progress needs to be measured by whether another person can get a system working: setup success, manual intervention, time, model usage, result correctness, and maintenance effort. A generated graph or a successful run on one developer's machine is only a first step.
+
+## Related work and what we want to learn
+
+RN shares substantial ground with existing projects. We want to learn from their work and explore integrations where useful.
+
+| Project | Relevant work |
+| --- | --- |
+| [Paper2Agent](https://github.com/jmiao24/Paper2Agent) · [paper](https://arxiv.org/abs/2509.06917) | Turning papers and associated code into tested, callable scientific tools. |
+| [n8n Assistant](https://blog.n8n.io/introducing-n8n-assistant/) | Building and refining visible, editable workflows from natural-language requests. |
+| [ToolUniverse](https://github.com/mims-harvard/ToolUniverse) | Scientific tool discovery, standardized invocation, and composition. |
+| [Galaxy Workflow Library](https://iwc.galaxyproject.org/about/) | Sharing documented, tested, and maintained scientific workflows. |
+| [Nextflow](https://docs.seqera.io/nextflow/) | Portable computational workflows, dependency management, and reproducible execution. |
+| [OpenResearch](https://github.com/alphaXiv/OpenResearch) | A local workspace and harness for research agents; also a tool connected by RN's first template. |
+
+The question we want to explore is how these ideas can help people assemble **a personal system spanning local applications, websites, APIs, agents, and data**, then hand it to someone else with understandable setup steps and verifiable results. These are design goals to validate; this comparison is not a claim of novelty, feature exclusivity, or endorsement. Listed projects retain their own authorship and licenses.
+
+## Build this with us
+
+If you have ever thought, “I know how I want to work; I wish my tools could work together that way,” we would like to build this with you.
+
+You can help by:
+
+- **Bringing a real workflow:** describe the tools you use, where information gets stuck, and what success would look like.
+- **Trying a template on a fresh setup:** report installation problems, manual fixes, and whether the result matches the promised output.
+- **Improving connectors and validation:** contribute a small, documented adapter with fictional test data and clear failure handling.
+- **Making systems easier to understand:** help with interaction design, accessibility, translation, and explanations of data flow.
+
+Start with an [issue](https://github.com/shwhwhwh/research-nexus/issues/new) or read the [contribution guide](CONTRIBUTING.md). You do not need a finished implementation to share a use case. For code contributions, please read the [contribution terms](CONTRIBUTOR_AGREEMENT.md); contributors retain authorship. Please use fictional or properly shareable examples and keep credentials and private workspaces out of submissions.
+
+**The aim is for a working system built by one person to become a starting point for the next.**
+
+## What is available today
+
+Research Nexus currently provides a local research workspace and top-level controller. Its first **System Template** connects alphaXiv, Zotero, OpenResearch, and a Google Drive desktop folder. Install the template, connect your own accounts and installed tools, then use the existing system inside RN.
 
 **v0.7 adds automatic system builds (Beta).** Submit a paper or describe a workflow; your local Codex/Claude designs a reusable blueprint, RN prepares supported components and tests/deploys its compiled channels. Export/import replays those channels without redesigning with an agent. [Automatic build guide](docs/AUTO_BUILD.md) · [中文](docs/AUTO_BUILD.zh-CN.md). Event-driven OpenResearch project onboarding, daily citation delivery, and orbital/structured graph layouts remain available. Unsupported APIs/adapters stay explicit setup requirements. The v0.7.2 source kit contains the current build and licensing documents. The historical demo below shows Template 01; it does not demonstrate the automatic builder.
 
